@@ -22,11 +22,31 @@ export class AppService {
     return await this.carRepo.find();
   }
 
+  async getCarsAll() {
+    return await this.carRepo.find({
+      withDeleted: true,
+      order: { deletedAt: 'ASC', id: 'DESC' },
+    });
+  }
+
   async createCar(car: any) {
     await this.carRepo.save(car);
   }
 
   async getCar(id: number) {
     return await this.carRepo.findOne({ where: { id } });
+  }
+
+  async updateCar(carId: number, updateData: Partial<Car>) {
+    await this.carRepo.update(carId, updateData);
+    return await this.getCar(carId);
+  }
+
+  async deleteCar(carId: number) {
+    await this.carRepo.softDelete(carId);
+  }
+
+  async restoreCar(carId: number) {
+    await this.carRepo.restore({ id: carId });
   }
 }
