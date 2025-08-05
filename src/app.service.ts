@@ -3,15 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { Car } from './db/car.entity';
+import { CarEntity } from './db/car.entity';
 
 import { BRANDS_AND_MODELS } from './brands';
 
 @Injectable()
 export class AppService {
   constructor(
-    @InjectRepository(Car)
-    protected readonly carRepo: Repository<Car>,
+    @InjectRepository(CarEntity)
+    protected readonly carRepo: Repository<CarEntity>,
   ) {}
 
   getAllBrandsAndModels(): any {
@@ -29,7 +29,7 @@ export class AppService {
     });
   }
 
-  async createCar(car: any) {
+  async createCar(car: CarEntity) {
     await this.carRepo.save(car);
   }
 
@@ -37,7 +37,7 @@ export class AppService {
     return await this.carRepo.findOne({ where: { id } });
   }
 
-  async updateCar(carId: number, updateData: Partial<Car>) {
+  async updateCar(carId: number, updateData: Partial<CarEntity>) {
     await this.carRepo.update(carId, updateData);
     return await this.getCar(carId);
   }

@@ -3,7 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Car } from './db/car.entity';
+
+import { AdminEntity } from './db/admin.entity';
+import { CarEntity } from './db/car.entity';
+import { FileEntity } from './db/file.entity';
+
+import { AuthModule } from './modules/auth/auth.module';
+
+const ENTITIES = [AdminEntity, CarEntity, FileEntity];
 
 @Module({
   imports: [
@@ -14,11 +21,13 @@ import { Car } from './db/car.entity';
       username: 'root',
       password: 'root',
       database: 'auto',
-      entities: [Car],
+      entities: ENTITIES,
       synchronize: true,
     }),
 
-    TypeOrmModule.forFeature([Car]),
+    TypeOrmModule.forFeature(ENTITIES),
+
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
