@@ -3,15 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { CarEntity } from './db/car.entity';
+import { CarEntity } from '../../db/car.entity';
+import { FileEntity } from '../../db/file.entity';
 
 import { BRANDS_AND_MODELS } from './brands';
 
 @Injectable()
-export class AppService {
+export class CarService {
   constructor(
     @InjectRepository(CarEntity)
     protected readonly carRepo: Repository<CarEntity>,
+
+    @InjectRepository(FileEntity)
+    protected readonly fileRepo: Repository<FileEntity>,
   ) {}
 
   getAllBrandsAndModels(): any {
@@ -40,6 +44,21 @@ export class AppService {
   async updateCar(carId: number, updateData: Partial<CarEntity>) {
     await this.carRepo.update(carId, updateData);
     return await this.getCar(carId);
+  }
+
+  async uploadCarImages(carId: number, images: Express.Multer.File[]) {
+    const entities = images.map((file) =>
+      this.fileRepo.create({
+        filename: file.filename,
+        mimetype: file.mimetype,
+        path: file.path,
+        car: {
+          id: carId,
+        },
+      }),
+    );
+
+    return await this.fileRepo.save(entities);
   }
 
   async deleteCar(carId: number) {

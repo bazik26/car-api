@@ -10,11 +10,13 @@ import { AuthStrategy } from './auth.strategy';
 
 import { AdminEntity } from '../../db/admin.entity';
 
+const ENTITIES = [AdminEntity];
+
 @Module({
   controllers: [AuthController],
   providers: [AuthStrategy, AuthService],
   imports: [
-    TypeOrmModule.forFeature([AdminEntity]),
+    TypeOrmModule.forFeature(ENTITIES),
 
     PassportModule.register({}),
     JwtModule.register({

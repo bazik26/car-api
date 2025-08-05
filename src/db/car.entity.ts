@@ -15,7 +15,7 @@ import { FileEntity } from './file.entity';
 })
 export class CarEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  readonly id: number;
 
   @Column({ nullable: true })
   brand: string;
@@ -120,16 +120,16 @@ export class CarEntity {
   group9: string[];
 
   @CreateDateColumn()
-  public readonly createdAt!: Date;
+  readonly createdAt!: Date;
 
   @UpdateDateColumn()
-  public readonly updatedAt!: Date;
+  readonly updatedAt!: Date;
 
   @DeleteDateColumn()
-  public readonly deletedAt!: Date;
+  readonly deletedAt!: Date;
 
-  @OneToMany(() => FileEntity, (entity) => entity.id, {
+  @OneToMany(() => FileEntity, (entity) => entity.car, {
     eager: true,
   })
-  public readonly files!: FileEntity[];
+  readonly files!: FileEntity[];
 }

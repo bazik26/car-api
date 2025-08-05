@@ -5,27 +5,38 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
 } from 'typeorm';
+
+import { CarEntity } from './car.entity';
 
 @Entity({
   name: 'files',
 })
 export class FileEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  readonly id: number;
 
   @Column()
-  public mimetype!: string;
+  filename!: string;
 
   @Column()
-  public location!: string;
+  mimetype!: string;
+
+  @Column()
+  path!: string;
+
+  @ManyToOne(() => CarEntity, (user) => user.files, {
+    onDelete: 'CASCADE',
+  })
+  car: CarEntity;
 
   @CreateDateColumn()
-  public readonly createdAt!: Date;
+  readonly createdAt!: Date;
 
   @UpdateDateColumn()
-  public readonly updatedAt!: Date;
+  readonly updatedAt!: Date;
 
   @DeleteDateColumn()
-  public readonly deletedAt!: Date;
+  readonly deletedAt!: Date;
 }

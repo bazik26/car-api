@@ -1,14 +1,15 @@
+import { join } from 'path';
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 import { AdminEntity } from './db/admin.entity';
 import { CarEntity } from './db/car.entity';
 import { FileEntity } from './db/file.entity';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { CarModule } from './modules/car/car.module';
 
 const ENTITIES = [AdminEntity, CarEntity, FileEntity];
 
@@ -27,9 +28,13 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
 
     TypeOrmModule.forFeature(ENTITIES),
 
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'images'),
+      serveRoot: '/images',
+    }),
+
     AuthModule,
+    CarModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

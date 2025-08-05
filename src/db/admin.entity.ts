@@ -15,22 +15,22 @@ export class AdminEntity {
   id: number;
 
   @Column({ unique: true })
-  public email!: string;
+  email!: string;
 
   @Column()
-  public password!: string;
+  password!: string;
 
   @Column({ type: 'boolean', default: false })
-  public isSuper!: boolean;
+  isSuper!: boolean;
 
   @CreateDateColumn()
-  public readonly createdAt!: Date;
+  readonly createdAt!: Date;
 
   @UpdateDateColumn()
-  public readonly updatedAt!: Date;
+  readonly updatedAt!: Date;
 
   @DeleteDateColumn()
-  public readonly deletedAt!: Date;
+  readonly deletedAt!: Date;
 
-  public AUTH_KEY!: string;
+  AUTH_KEY!: string;
 }
