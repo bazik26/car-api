@@ -5,32 +5,37 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
-@Entity()
-export class Car {
-    @PrimaryGeneratedColumn()
-    id: number;
+import { FileEntity } from './file.entity';
 
-    @Column({length: 50})
+@Entity({
+  name: 'cars',
+})
+export class CarEntity {
+    @PrimaryGeneratedColumn()
+    readonly id: number;
+
+    @Column({nullable: true})
     brand: string;
 
-    @Column({length: 50})
+    @Column({nullable: true})
     model: string;
 
-    @Column({type: 'smallint', unsigned: true})
+    @Column({type: 'smallint', unsigned: true, nullable: true})
     year: number;
 
-    @Column({type: 'int', unsigned: true})
+    @Column({type: 'int', unsigned: true, nullable: true})
     mileage: number;
 
-    @Column({type: 'varchar', length: 17, nullable: true})
+    @Column({ nullable: true})
     vin: string;
 
-    @Column({length: 20})
+    @Column({nullable: true})
     gearbox: string;
 
-    @Column({length: 20})
+    @Column({nullable: true})
     fuel: string;
 
     @Column({type: 'int', unsigned: true, nullable: true})
@@ -51,43 +56,40 @@ export class Car {
     @Column({type: 'text', nullable: true})
     description: string;
 
-    @Column('simple-json', {nullable: true})
-    images: string[];
-
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     conditionerType: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     windowLifter: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     interiorMaterials: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     interiorColor: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     powerSteering: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     steeringWheelAdjustment: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     spareWheel: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     headlights: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     seatAdjustment: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     memorySeatModule: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     seatHeated: string;
 
-    @Column({type: 'varchar', nullable: true})
+    @Column({ nullable: true})
     seatVentilation: string;
 
     @Column('simple-json', {nullable: true})
@@ -118,11 +120,16 @@ export class Car {
     group9: string[];
 
     @CreateDateColumn({nullable: true})
-    public readonly createdAt!: Date;
+    readonly createdAt!: Date;
 
     @UpdateDateColumn({nullable: true})
-    public readonly updatedAt!: Date;
+    readonly updatedAt!: Date;
 
     @DeleteDateColumn({nullable: true})
-    public readonly deletedAt!: Date;
+    readonly deletedAt!: Date;
+
+  @OneToMany(() => FileEntity, (entity) => entity.car, {
+    eager: true,
+  })
+  readonly files!: FileEntity[];
 }
