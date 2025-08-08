@@ -12,6 +12,9 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CarModule } from './modules/car/car.module';
 
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 const ENTITIES = [AdminEntity, CarEntity, FileEntity];
 
 @Module({
@@ -38,5 +41,8 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
     AuthModule,
     CarModule,
   ],
+
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
