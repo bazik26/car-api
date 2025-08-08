@@ -7,6 +7,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AdminEntity } from './db/admin.entity';
 import { CarEntity } from './db/car.entity';
 import { FileEntity } from './db/file.entity';
+import { AdminModule } from './modules/admin/admin.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { CarModule } from './modules/car/car.module';
@@ -33,6 +34,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
       serveRoot: '/images',
     }),
 
+    AdminModule,
     AuthModule,
     CarModule,
   ],

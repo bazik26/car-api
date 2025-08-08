@@ -5,7 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
+
+import { CarEntity } from './car.entity';
 
 @Entity({
   name: 'admins',
@@ -31,6 +34,9 @@ export class AdminEntity {
 
   @DeleteDateColumn()
   readonly deletedAt!: Date;
+
+  @OneToMany(() => CarEntity, (entity) => entity.admin)
+  readonly cars!: CarEntity[];
 
   AUTH_KEY!: string;
 }

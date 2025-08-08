@@ -18,7 +18,7 @@ export class AuthController {
   @Public()
   async auth(@Req() request: Request): Promise<AdminEntity> {
     const AUTH_KEY = (request.cookies.AUTH_KEY ||
-      request.headers.authorization?.split(' ')[1]) as string;
+      request.headers.authorization) as string;
 
     const user = await this.authService.auth(AUTH_KEY);
     user.AUTH_KEY = AUTH_KEY;

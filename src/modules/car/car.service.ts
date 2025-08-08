@@ -1,22 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { Request } from 'express';
 import { Repository } from 'typeorm';
 
+import { AdminEntity } from '../../db/admin.entity';
 import { CarEntity } from '../../db/car.entity';
 import { FileEntity } from '../../db/file.entity';
 
 import { BRANDS_AND_MODELS } from './brands';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class CarService {
   constructor(
+    @Inject(REQUEST)
+    protected readonly request: Request,
+
     @InjectRepository(CarEntity)
     protected readonly carRepo: Repository<CarEntity>,
 
     @InjectRepository(FileEntity)
     protected readonly fileRepo: Repository<FileEntity>,
   ) {}
+
+  protected get admin(): AdminEntity {
+    return <AdminEntity>this.request.user;
+  }
 
   getAllBrandsAndModels(): any {
     return BRANDS_AND_MODELS;
@@ -34,6 +44,8 @@ export class CarService {
   }
 
   async createCar(car: CarEntity) {
+    car.admin = this.admin;
+
     await this.carRepo.save(car);
   }
 

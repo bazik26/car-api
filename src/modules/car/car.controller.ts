@@ -9,7 +9,7 @@ import {
   Patch,
   Post,
   UseInterceptors,
-  UploadedFiles
+  UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
@@ -24,6 +24,7 @@ export class CarController {
   constructor(protected readonly carService: CarService) {}
 
   @Get('/all-brands-and-models')
+  @Public()
   getBrandsAndModels(): any {
     return this.carService.getAllBrandsAndModels();
   }
@@ -35,6 +36,7 @@ export class CarController {
   }
 
   @Get('/all')
+  @Public()
   async getCarsAll() {
     return await this.carService.getCarsAll();
   }
