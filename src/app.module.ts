@@ -18,10 +18,10 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
-      port: 3306,
+      host: 'yamabiko.proxy.rlwy.net',
+      port: 21848,
       username: 'root',
-      password: 'root',
+      password: 'IfcOOcWucxzQjuGMfLGKPuyOCUBcMFMy',
       database: 'auto',
       entities: ENTITIES,
       synchronize: true,
