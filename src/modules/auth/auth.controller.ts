@@ -7,7 +7,6 @@ import { Public } from './public.decorator';
 import { AuthService } from './auth.service';
 
 import { SigninDTO } from '../../dtos/signin.dto';
-import { SignupDTO } from '../../dtos/signup.dto';
 import { AdminEntity } from '../../db/admin.entity';
 
 @Controller('auth')
@@ -30,12 +29,6 @@ export class AuthController {
   @Public()
   async signin(@Body() authDTO: SigninDTO) {
     return await this.authService.signin(authDTO);
-  }
-
-  @Post('/signup')
-  @Public()
-  async signup(@Body() authDTO: SignupDTO) {
-    return await this.authService.signup(authDTO);
   }
 
   @Get('/signout')
