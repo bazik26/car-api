@@ -36,7 +36,6 @@ export class CarController {
   }
 
   @Get('/all')
-  @Public()
   async getCarsAll() {
     return await this.carService.getCarsAll();
   }
@@ -58,7 +57,6 @@ export class CarController {
   }
 
   @Patch('/car/:carId/images')
-  @Public()
   @UseInterceptors(
     FilesInterceptor('images', 20, {
       storage: diskStorage({
