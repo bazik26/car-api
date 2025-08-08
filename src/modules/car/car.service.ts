@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
 import { Repository } from 'typeorm';
 
+import { CarSearchDTO } from '../../dtos/car.dto';
+
 import { AdminEntity } from '../../db/admin.entity';
 import { CarEntity } from '../../db/car.entity';
 import { FileEntity } from '../../db/file.entity';
@@ -32,10 +34,108 @@ export class CarService {
     return BRANDS_AND_MODELS;
   }
 
+  async getBrandsAndModelsWithCount() {
+    const raw = await this.carRepo
+      .createQueryBuilder('car')
+      .select('car.brand', 'brand')
+      .addSelect('car.model', 'model')
+      .addSelect('COUNT(car.id)', 'count')
+      .groupBy('car.brand')
+      .addGroupBy('car.model')
+      .getRawMany();
+
+    const result: {
+      title: string;
+      count: number;
+      models: { title: string; count: number }[];
+    }[] = [];
+
+    raw.forEach((row) => {
+      let brand = result.find((b) => b.title === row.brand);
+      if (!brand) {
+        brand = { title: row.brand, count: 0, models: [] };
+        result.push(brand);
+      }
+
+      brand.models.push({
+        title: row.model,
+        count: Number(row.count),
+      });
+
+      brand.count += Number(row.count);
+    });
+
+    return result;
+  }
+
   async getCars() {
     return await this.carRepo.find({
       relations: ['files'],
     });
+  }
+
+  async searchCars(carSearchDTO: CarSearchDTO) {
+    const qb = this.carRepo
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
+      .where('car.deletedAt IS NULL');
+
+    if (carSearchDTO.brand)
+      qb.andWhere('car.brand = :brand', { brand: carSearchDTO.brand });
+    if (carSearchDTO.model)
+      qb.andWhere('car.model = :model', { model: carSearchDTO.model });
+
+    const addRange = (field: string, start?: number, end?: number) => {
+      if (start != null && end != null) {
+        qb.andWhere(`car.${field} BETWEEN :${field}Start AND :${field}End`, {
+          [`${field}Start`]: start,
+          [`${field}End`]: end,
+        });
+      } else if (start != null) {
+        qb.andWhere(`car.${field} >= :${field}Start`, {
+          [`${field}Start`]: start,
+        });
+      } else if (end != null) {
+        qb.andWhere(`car.${field} <= :${field}End`, {
+          [`${field}End`]: end,
+        });
+      }
+    };
+
+    addRange('year', carSearchDTO.yearStart, carSearchDTO.yearEnd);
+    addRange('mileage', carSearchDTO.mileageStart, carSearchDTO.mileageEnd);
+    addRange(
+      'powerValue',
+      carSearchDTO.powerValueStart,
+      carSearchDTO.powerValueEnd,
+    );
+    addRange('engine', carSearchDTO.engineStart, carSearchDTO.engineEnd);
+    addRange('price', carSearchDTO.priceStart, carSearchDTO.priceEnd);
+
+    const addIn = (field: keyof CarSearchDTO, column: string) => {
+      const val = carSearchDTO[field] as string[] | undefined;
+      if (val?.length) {
+        qb.andWhere(`car.${column} IN (:...${column})`, { [column]: val });
+      }
+    };
+
+    addIn('gearbox', 'gearbox');
+    addIn('fuel', 'fuel');
+    addIn('drive', 'drive');
+    addIn('conditionerType', 'conditionerType');
+    addIn('windowLifter', 'windowLifter');
+    addIn('interiorMaterials', 'interiorMaterials');
+    addIn('interiorColor', 'interiorColor');
+    addIn('powerSteering', 'powerSteering');
+    addIn('steeringWheelAdjustment', 'steeringWheelAdjustment');
+    addIn('spareWheel', 'spareWheel');
+    addIn('headlights', 'headlights');
+    addIn('seatAdjustment', 'seatAdjustment');
+    addIn('memorySeatModule', 'memorySeatModule');
+    addIn('seatHeated', 'seatHeated');
+    addIn('seatVentilation', 'seatVentilation');
+
+    return await qb.orderBy('car.id', 'DESC').getMany();
   }
 
   async getCarsAll() {

@@ -10,6 +10,7 @@ import {
   Post,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
@@ -18,6 +19,8 @@ import { diskStorage } from 'multer';
 import { Public } from '../auth/public.decorator';
 
 import { CarService } from './car.service';
+
+import { CarSearchDTO } from '../../dtos/car.dto';
 
 @Controller('/cars')
 export class CarController {
@@ -29,10 +32,22 @@ export class CarController {
     return this.carService.getAllBrandsAndModels();
   }
 
+  @Get('/brands-and-models-with-count')
+  @Public()
+  getBrandsAndModelsWithCount(): any {
+    return this.carService.getBrandsAndModelsWithCount();
+  }
+
   @Get('/')
   @Public()
   async getCars() {
     return await this.carService.getCars();
+  }
+
+  @Post('/search')
+  @Public()
+  async searchCars(@Body() carSearchDTO: CarSearchDTO) {
+    return await this.carService.searchCars(carSearchDTO);
   }
 
   @Get('/all')
