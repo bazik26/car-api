@@ -33,28 +33,43 @@ export class CarService {
   }
 
   async getCars() {
-    return await this.carRepo.find();
+    return await this.carRepo.find({
+      relations: ['files'],
+    });
   }
 
   async getCarsAll() {
     return await this.carRepo.find({
+      ...(this.admin.isSuper ? {} : { adminId: this.admin.id }),
       withDeleted: true,
-      order: { deletedAt: 'ASC', id: 'DESC' },
+      relations: ['files'],
+      order: {
+        deletedAt: 'ASC',
+        id: 'DESC',
+        files: {
+          id: 'ASC',
+        },
+      },
     });
   }
 
   async createCar(car: CarEntity) {
     car.admin = this.admin;
 
-    await this.carRepo.save(car);
+    return await this.carRepo.save(car);
   }
 
   async getCar(id: number) {
-    return await this.carRepo.findOne({ where: { id } });
+    return await this.carRepo.findOne({
+      where: { id },
+      relations: ['files'],
+      order: { files: { id: 'ASC' } },
+    });
   }
 
   async updateCar(carId: number, updateData: Partial<CarEntity>) {
     await this.carRepo.update(carId, updateData);
+
     return await this.getCar(carId);
   }
 
@@ -71,6 +86,10 @@ export class CarService {
     );
 
     return await this.fileRepo.save(entities);
+  }
+
+  async deleteCarImage(carId: number, fileId) {
+    await this.fileRepo.delete(fileId);
   }
 
   async deleteCar(carId: number) {

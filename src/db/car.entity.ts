@@ -130,9 +130,7 @@ export class CarEntity {
   @DeleteDateColumn({ nullable: true })
   readonly deletedAt!: Date;
 
-  @OneToMany(() => FileEntity, (entity) => entity.car, {
-    eager: true,
-  })
+  @OneToMany(() => FileEntity, (entity) => entity.car)
   readonly files!: FileEntity[];
 
   @ManyToOne(() => AdminEntity, (entity) => entity.cars, {

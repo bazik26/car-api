@@ -42,7 +42,7 @@ export class CarController {
 
   @Post('/car')
   async createCar(@Body() car: any) {
-    await this.carService.createCar(car);
+    return await this.carService.createCar(car);
   }
 
   @Get('/car/:carId')
@@ -74,6 +74,14 @@ export class CarController {
     @UploadedFiles() images: Express.Multer.File[],
   ) {
     return this.carService.uploadCarImages(carId, images);
+  }
+
+  @Delete('/car/:carId/images/image/:fileId')
+  deleteCarImage(
+    @Param('carId') carId: number,
+    @Param('fileId') fileId: number,
+  ): Promise<void> {
+    return this.carService.deleteCarImage(carId, fileId);
   }
 
   @Delete('/car/:carId')
