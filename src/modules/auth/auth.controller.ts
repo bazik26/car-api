@@ -33,6 +33,7 @@ export class AuthController {
   }
 
   @Post('/signup')
+  @Public()
   async signup(@Body() authDTO: SignupDTO) {
     return await this.authService.signup(authDTO);
   }

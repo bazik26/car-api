@@ -47,6 +47,7 @@ export class CarController {
   }
 
   @Get('/car/:carId')
+  @Public()
   async getCar(@Param('carId') carId: number) {
     return await this.carService.getCar(carId);
   }
