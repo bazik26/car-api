@@ -20,7 +20,7 @@ export class AuthStrategy extends PassportStrategy(Strategy, 'jwt') {
             (request.cookies?.AUTH_KEY as string | undefined) ?? null;
 
           const headerToken = request.headers.authorization
-            ? request.headers.authorization.split(' ')[1]
+            ? request.headers.authorization
             : null;
 
           return cookieToken || headerToken;
