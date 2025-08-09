@@ -1,7 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-
 import { Public } from './modules/auth/public.decorator';
-
 import { AppService } from './app.service';
 
 @Controller()
@@ -11,6 +9,11 @@ export class AppController {
   @Post('/contact-us')
   @Public()
   async contactUs(@Body() payload: any) {
-    await this.appService.contactUs(payload);
+    try {
+      await this.appService.contactUs(payload);
+      return { ok: true, message: 'Заявка успешно отправлена' };
+    } catch (error) {
+      return { ok: false, message: error?.message || 'Ошибка отправки заявки' };
+    }
   }
 }

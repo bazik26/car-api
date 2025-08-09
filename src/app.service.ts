@@ -4,8 +4,8 @@ import axios from 'axios';
 
 @Injectable()
 export class AppService {
-  public readonly BOT_TOKEN!: string; //jfksjdok:dsjkfjdksfksjdk
-  public readonly CHANNEL_ID!: number; // -1472389478923489237982
+  public readonly BOT_TOKEN: string = '7403653964:AAHka9IX1G_GC0SnJUh0w-_fwuURjnMWYbo'
+  public readonly CHANNEL_ID: number = -4887008710
 
   async contactUs(payload: any) {
     const text = `
