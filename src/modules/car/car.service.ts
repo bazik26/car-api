@@ -178,7 +178,7 @@ export class CarService {
       this.fileRepo.create({
         filename: file.filename,
         mimetype: file.mimetype,
-        path: file.path.replace('/data', ''),
+        path: file.path.replace('/data/', ''),
         car: {
           id: carId,
         },
