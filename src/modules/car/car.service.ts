@@ -173,12 +173,12 @@ export class CarService {
     return await this.getCar(carId);
   }
 
-  async uploadCarImages(carId: number, images: Express.Multer.File[]) {
-    const entities = images.map((file) =>
+  async uploadCarImages(carId: number, files: Express.Multer.File[]) {
+    const entities = files.map((file) =>
       this.fileRepo.create({
         filename: file.filename,
         mimetype: file.mimetype,
-        path: file.path,
+        path: file.path.replace('/data', ''),
         car: {
           id: carId,
         },

@@ -86,9 +86,9 @@ export class CarController {
   )
   uploadCarImages(
     @Param('carId') carId: number,
-    @UploadedFiles() images: Express.Multer.File[],
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.carService.uploadCarImages(carId, images);
+    return this.carService.uploadCarImages(carId, files);
   }
 
   @Delete('/car/:carId/images/image/:fileId')
