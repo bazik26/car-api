@@ -21,11 +21,11 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'yamabiko.proxy.rlwy.net',
-      port: 21848,
-      username: 'root',
-      password: 'IfcOOcWucxzQjuGMfLGKPuyOCUBcMFMy',
-      database: 'auto',
+      host: process.env.MYSQLHOST || 'localhost',
+      port: Number(process.env.MYSQLPORT ?? 3306),
+      database: process.env.MYSQLDATABASE || 'auto',
+      username: process.env.MYSQLUSER || 'root',
+      password: process.env.MYSQLPASSWORD || 'root',
       entities: ENTITIES,
       synchronize: true,
     }),
@@ -33,7 +33,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
     TypeOrmModule.forFeature(ENTITIES),
 
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'images'),
+      rootPath: process.env.UPLOAD_DIR || join(__dirname, '..', 'images'),
       serveRoot: '/images',
     }),
 

@@ -75,7 +75,7 @@ export class CarController {
   @UseInterceptors(
     FilesInterceptor('images', 20, {
       storage: diskStorage({
-        destination: './images',
+        destination: process.env.UPLOAD_DIR || './images',
         filename: (_, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
