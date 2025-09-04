@@ -15,7 +15,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:4200',
-      'https://auto-client-production.up.railway.app',
+      'https://car-client-production.up.railway.app',
     ],
     credentials: true,
   });
