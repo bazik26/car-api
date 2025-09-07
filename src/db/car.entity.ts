@@ -55,6 +55,9 @@ export class CarEntity {
   @Column({ type: 'int', unsigned: true, nullable: true })
   price: number;
 
+  @Column({ type: 'boolean', default: false })
+  sale: boolean;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

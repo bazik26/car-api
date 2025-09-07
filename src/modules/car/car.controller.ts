@@ -44,6 +44,12 @@ export class CarController {
     return await this.carService.getCars();
   }
 
+  @Get('/sold')
+  @Public()
+  async getSoldCars(@Query('limit') limit?: number) {
+    return await this.carService.getSoldCars(limit || 15);
+  }
+
   @Post('/search')
   @Public()
   async searchCars(@Body() carSearchDTO: CarSearchDTO) {

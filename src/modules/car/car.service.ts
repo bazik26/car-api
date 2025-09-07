@@ -74,6 +74,15 @@ export class CarService {
     });
   }
 
+  async getSoldCars(limit: number = 15) {
+    return await this.carRepo.find({
+      where: { sale: true },
+      relations: ['files'],
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async searchCars(carSearchDTO: CarSearchDTO) {
     const qb = this.carRepo
       .createQueryBuilder('car')
