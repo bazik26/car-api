@@ -16,6 +16,10 @@ async function bootstrap() {
     origin: [
       'http://localhost:4200',
       'https://car-client-production.up.railway.app',
+      'https://car-client-old-production.up.railway.app',
+      'http://localhost:3001',
+      'http://localhost:3000',
+      'http://localhost:3002',
     ],
     credentials: true,
   });
