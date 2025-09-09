@@ -40,8 +40,18 @@ export class CarController {
 
   @Get('/')
   @Public()
-  async getCars() {
-    return await this.carService.getCars();
+  async getCars(
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('random') random?: string
+  ) {
+    return await this.carService.getCars({
+      limit,
+      sortBy,
+      sortOrder,
+      random: random === 'true'
+    });
   }
 
   @Get('/sold')

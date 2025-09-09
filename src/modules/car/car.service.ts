@@ -68,10 +68,36 @@ export class CarService {
     return result;
   }
 
-  async getCars() {
-    return await this.carRepo.find({
-      relations: ['files'],
-    });
+  async getCars(params?: {
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    random?: boolean;
+  }) {
+    const queryBuilder = this.carRepo
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.files', 'files')
+      .where('car.sale = :sale', { sale: false }); // Только непроданные автомобили
+
+    // Применяем лимит
+    if (params?.limit) {
+      queryBuilder.limit(params.limit);
+    }
+
+    // Применяем сортировку
+    if (params?.sortBy && params?.sortOrder) {
+      const orderDirection = params.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+      queryBuilder.orderBy(`car.${params.sortBy}`, orderDirection);
+    } else {
+      queryBuilder.orderBy('car.id', 'DESC'); // По умолчанию сортируем по ID
+    }
+
+    // Применяем случайную выборку
+    if (params?.random) {
+      queryBuilder.orderBy('RAND()');
+    }
+
+    return await queryBuilder.getMany();
   }
 
   async getSoldCars(limit: number = 15) {
