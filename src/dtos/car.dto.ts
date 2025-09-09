@@ -123,4 +123,12 @@ export class CarSearchDTO {
   @IsArray()
   @IsString({ each: true })
   seatVentilation!: string[];
+
+  @IsOptional()
+  @IsNumber()
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  limit?: number = 12;
 }

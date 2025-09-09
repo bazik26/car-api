@@ -144,7 +144,32 @@ export class CarService {
     addIn('seatHeated', 'seatHeated');
     addIn('seatVentilation', 'seatVentilation');
 
-    return await qb.orderBy('car.id', 'DESC').getMany();
+    // Добавляем пагинацию
+    const page = carSearchDTO.page || 1;
+    const limit = carSearchDTO.limit || 12;
+    const offset = (page - 1) * limit;
+
+    // Получаем общее количество записей
+    const total = await qb.getCount();
+
+    // Получаем данные с пагинацией
+    const cars = await qb
+      .orderBy('car.id', 'DESC')
+      .skip(offset)
+      .take(limit)
+      .getMany();
+
+    return {
+      cars,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    };
   }
 
   async getCarsAll() {
