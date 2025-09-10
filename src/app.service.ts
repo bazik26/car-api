@@ -13,9 +13,8 @@ export class AppService {
 
 💬 **Мессенджер:** ${payload.messenger}
 👤 **Имя:** ${payload.firstName}
-👥 **Фамилия:** ${payload.lastName}
 📞 **Телефон:** ${payload.phone}
-📝 **Комментарий:** ${payload.message}
+📝 **Комментарий:** ${payload.message || 'Не указано'}
     `;
 
     try {
