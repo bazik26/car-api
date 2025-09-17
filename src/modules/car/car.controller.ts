@@ -124,4 +124,14 @@ export class CarController {
   restoreCar(@Param('carId') carId: number): Promise<void> {
     return this.carService.restoreCar(carId);
   }
+
+  @Patch('/car/:carId/mark-sold')
+  markCarAsSold(@Param('carId') carId: number): Promise<void> {
+    return this.carService.markCarAsSold(carId);
+  }
+
+  @Patch('/car/:carId/mark-available')
+  markCarAsAvailable(@Param('carId') carId: number): Promise<void> {
+    return this.carService.markCarAsAvailable(carId);
+  }
 }

@@ -259,4 +259,12 @@ export class CarService {
   async restoreCar(carId: number) {
     await this.carRepo.restore({ id: carId });
   }
+
+  async markCarAsSold(carId: number) {
+    await this.carRepo.update(carId, { isSold: true });
+  }
+
+  async markCarAsAvailable(carId: number) {
+    await this.carRepo.update(carId, { isSold: false });
+  }
 }
