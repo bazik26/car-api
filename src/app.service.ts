@@ -4,8 +4,8 @@ import axios from 'axios';
 
 @Injectable()
 export class AppService {
-  public readonly BOT_TOKEN: string = '7403653964:AAHka9IX1G_GC0SnJUh0w-_fwuURjnMWYbo'
-  public readonly CHANNEL_ID: number = -4887008710
+  public readonly BOT_TOKEN: string = process.env.TELEGRAM_BOT_TOKEN || '8444622269:AAHbHEsMa-0iuzXtbXW7QjtgefyzbZW6Fd4'
+  public readonly CHANNEL_ID: number = parseInt(process.env.TELEGRAM_CHANNEL_ID || '-4887008710')
 
   async contactUs(payload: any) {
     const text = `

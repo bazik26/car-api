@@ -77,7 +77,7 @@ export class CarService {
     const queryBuilder = this.carRepo
       .createQueryBuilder('car')
       .leftJoinAndSelect('car.files', 'files')
-      .where('car.sale = :sale', { sale: false }); // Только непроданные автомобили
+      .where('car.sale = :sale AND car.isSold = :isSold', { sale: false, isSold: false }); // Только непроданные автомобили
 
     // Применяем лимит
     if (params?.limit) {

@@ -16,5 +16,19 @@ export class AppController {
       return { ok: false, message: error?.message || 'Ошибка отправки заявки' };
     }
   }
-  //test
+  @Post('/test-telegram')
+  @Public()
+  async testTelegram() {
+    try {
+      await this.appService.contactUs({
+        messenger: 'Test',
+        firstName: 'Test User',
+        phone: '+7 (999) 123-45-67',
+        message: 'Тестовое сообщение для проверки бота'
+      });
+      return { ok: true, message: 'Тестовое сообщение отправлено в Telegram' };
+    } catch (error) {
+      return { ok: false, message: error?.message || 'Ошибка отправки тестового сообщения' };
+    }
+  }
 }
