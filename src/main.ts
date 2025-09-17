@@ -17,6 +17,7 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://car-client-production.up.railway.app',
       'https://car-client-old-production.up.railway.app',
+      'https://car-client-2-production.up.railway.app',
       'http://localhost:3001',
       'http://localhost:3000',
       'http://localhost:3002',
