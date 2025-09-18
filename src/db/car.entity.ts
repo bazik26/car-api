@@ -56,10 +56,10 @@ export class CarEntity {
   price: number;
 
   @Column({ type: 'boolean', default: false })
-  sale: boolean;
-
-  @Column({ type: 'boolean', default: false })
   isSold: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  promo: boolean;
 
   @Column({ type: 'text', nullable: true })
   description: string;

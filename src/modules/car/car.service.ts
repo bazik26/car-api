@@ -77,7 +77,7 @@ export class CarService {
     const queryBuilder = this.carRepo
       .createQueryBuilder('car')
       .leftJoinAndSelect('car.files', 'files')
-      .where('car.sale = :sale AND car.isSold = :isSold', { sale: false, isSold: false }); // Только непроданные автомобили
+      .where('car.isSold = :isSold', { isSold: false }); // Только непроданные автомобили
 
     // Применяем лимит
     if (params?.limit) {
@@ -102,7 +102,7 @@ export class CarService {
 
   async getSoldCars(limit: number = 15) {
     return await this.carRepo.find({
-      where: { sale: true },
+      where: { isSold: true },
       relations: ['files'],
       take: limit,
       order: { createdAt: 'DESC' },
