@@ -22,6 +22,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:3002',
       'https://adenatrans.ru',
+      'https://www.adenatrans.ru',
     ],
     credentials: true,
   });
