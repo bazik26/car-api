@@ -46,7 +46,7 @@ export class CarEntity {
   @Column({ nullable: true })
   powerType: string;
 
-  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
   engine: number;
 
   @Column({ nullable: true })
