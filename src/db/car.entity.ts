@@ -61,6 +61,9 @@ export class CarEntity {
   @Column({ type: 'boolean', nullable: true })
   promo: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  promoSold: boolean;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

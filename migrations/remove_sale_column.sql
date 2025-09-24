@@ -27,3 +27,6 @@ SELECT
     WHEN @column_exists > 0 THEN 'Column sale successfully removed'
     ELSE 'Column sale was not found, no changes made'
   END as migration_result;
+
+
+
