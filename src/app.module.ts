@@ -34,7 +34,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
 
     ServeStaticModule.forRoot({
       rootPath: process.env.UPLOAD_DIR || join(__dirname, '..', 'images'),
-      serveRoot: '/images',
+      serveRoot: '/',
     }),
 
     AdminModule,
