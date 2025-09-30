@@ -25,6 +25,7 @@ async function bootstrap() {
       'https://www.adenatrans.ru',
       'https://auto-c-cars.ru',
       'https://www.auto-c-cars.ru',
+      'https://shop-ytb-client.onrender.com',
     ],
     credentials: true,
   });
