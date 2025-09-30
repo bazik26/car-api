@@ -1,7 +1,9 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
+import { Body, Controller, Post, Req, Get } from '@nestjs/common';
 import { Request } from 'express';
 import { Public } from './modules/auth/public.decorator';
 import { AppService } from './app.service';
+import { readdir } from 'fs/promises';
+import { join } from 'path';
 
 @Controller()
 export class AppController {
@@ -42,6 +44,36 @@ export class AppController {
       return { ok: true, message: 'Тестовое сообщение отправлено в Telegram' };
     } catch (error) {
       return { ok: false, message: error?.message || 'Ошибка отправки тестового сообщения' };
+    }
+  }
+
+  @Get('/debug/images')
+  @Public()
+  async debugImages() {
+    try {
+      const imagesPath = join(process.cwd(), 'images');
+      const carsPath = join(imagesPath, 'cars');
+      const exists = require('fs').existsSync(carsPath);
+      
+      if (!exists) {
+        return { 
+          error: 'Cars folder not found',
+          cwd: process.cwd(),
+          imagesPath,
+          carsPath
+        };
+      }
+      
+      const folders = await readdir(carsPath);
+      return {
+        cwd: process.cwd(),
+        imagesPath,
+        carsPath,
+        foldersCount: folders.length,
+        firstFolders: folders.slice(0, 10)
+      };
+    } catch (error) {
+      return { error: error.message };
     }
   }
 }
