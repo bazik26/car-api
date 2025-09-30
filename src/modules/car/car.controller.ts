@@ -1,4 +1,4 @@
-import { extname } from 'path';
+import { extname, join } from 'path';
 
 import {
   Body,
@@ -11,8 +11,11 @@ import {
   UseInterceptors,
   UploadedFiles,
   Query,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { createReadStream, existsSync } from 'fs';
 
 import { diskStorage } from 'multer';
 
@@ -133,5 +136,34 @@ export class CarController {
   @Patch('/car/:carId/mark-available')
   markCarAsAvailable(@Param('carId') carId: number): Promise<void> {
     return this.carService.markCarAsAvailable(carId);
+  }
+
+  @Get('/:carId/:filename')
+  @Public()
+  async getCarImage(
+    @Param('carId') carId: string,
+    @Param('filename') filename: string,
+    @Res() res: Response
+  ) {
+    try {
+      const filePath = join(process.cwd(), 'images', 'cars', carId, filename);
+      
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ 
+          error: 'Image not found',
+          path: filePath 
+        });
+      }
+
+      // Устанавливаем правильные заголовки для изображений
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', `image/${filename.split('.').pop()}`);
+      
+      const fileStream = createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
   }
 }
