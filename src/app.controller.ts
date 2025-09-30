@@ -1,9 +1,10 @@
-import { Body, Controller, Post, Req, Get } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Post, Req, Get, Param, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { Public } from './modules/auth/public.decorator';
 import { AppService } from './app.service';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
+import { createReadStream, existsSync } from 'fs';
 
 @Controller()
 export class AppController {
@@ -74,6 +75,35 @@ export class AppController {
       };
     } catch (error) {
       return { error: error.message };
+    }
+  }
+
+  @Get('/cars/:carId/:filename')
+  @Public()
+  async getCarImage(
+    @Param('carId') carId: string,
+    @Param('filename') filename: string,
+    @Res() res: Response
+  ) {
+    try {
+      const filePath = join(process.cwd(), 'images', 'cars', carId, filename);
+      
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ 
+          error: 'Image not found',
+          path: filePath 
+        });
+      }
+
+      // Устанавливаем правильные заголовки для изображений
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', `image/${filename.split('.').pop()}`);
+      
+      const fileStream = createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
   }
 }
