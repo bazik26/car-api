@@ -77,32 +77,4 @@ export class AppController {
     }
   }
 
-  @Get('/images/:filename')
-  @Public()
-  async getImage(
-    @Param('filename') filename: string,
-    @Res() res: Response
-  ) {
-    try {
-      const filePath = join(process.cwd(), 'images', filename);
-      const { createReadStream, existsSync } = require('fs');
-      
-      if (!existsSync(filePath)) {
-        return res.status(404).json({ 
-          error: 'Image not found',
-          path: filePath 
-        });
-      }
-
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Content-Type', `image/${filename.split('.').pop()}`);
-      
-      const fileStream = createReadStream(filePath);
-      fileStream.pipe(res);
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  }
-
 }
