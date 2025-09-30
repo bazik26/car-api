@@ -57,5 +57,4 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 
 # local files
-
-/images
+# Removed /images to allow car images in repository
