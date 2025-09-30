@@ -33,7 +33,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
     TypeOrmModule.forFeature(ENTITIES),
 
     ServeStaticModule.forRoot({
-      rootPath: process.env.UPLOAD_DIR || join(__dirname, '..', 'images'),
+      rootPath: process.env.UPLOAD_DIR || join(process.cwd(), 'images'),
       serveRoot: '/',
     }),
 
