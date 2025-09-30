@@ -146,7 +146,9 @@ export class CarController {
     @Res() res: Response
   ) {
     try {
-      const filePath = join(process.cwd(), 'images', 'cars', carId, filename);
+      // Добавляем нули впереди для соответствия названиям папок (например: 1855 -> 001855)
+      const paddedCarId = carId.padStart(6, '0');
+      const filePath = join(process.cwd(), 'images', 'cars', paddedCarId, filename);
       
       if (!existsSync(filePath)) {
         return res.status(404).json({ 
