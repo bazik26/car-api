@@ -23,6 +23,8 @@ async function bootstrap() {
       'http://localhost:3002',
       'https://adenatrans.ru',
       'https://www.adenatrans.ru',
+      'https://auto-c-cars.ru',
+      'https://www.auto-c-cars.ru',
     ],
     credentials: true,
   });
