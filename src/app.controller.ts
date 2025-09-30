@@ -1,5 +1,5 @@
-import { Body, Controller, Post, Req, Get } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Post, Req, Get, Param, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { Public } from './modules/auth/public.decorator';
 import { AppService } from './app.service';
 import { readdir } from 'fs/promises';
@@ -81,7 +81,7 @@ export class AppController {
   @Public()
   async getImage(
     @Param('filename') filename: string,
-    @Res() res: any
+    @Res() res: Response
   ) {
     try {
       const filePath = join(process.cwd(), 'images', filename);
