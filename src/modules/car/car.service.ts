@@ -238,7 +238,9 @@ export class CarService {
       this.fileRepo.create({
         filename: file.filename,
         mimetype: file.mimetype,
-        path: file.path.replace('/data/', ''),
+        // Сохраняем только имя файла без пути к папке
+        // ServeStaticModule раздаёт файлы из /app/images по корню /
+        path: file.filename,
         car: {
           id: carId,
         },
