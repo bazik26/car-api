@@ -53,7 +53,7 @@ async function bootstrap() {
       secret: 'asiodasjoddjdoasddasoidjasiodasdjaiodd',
       resave: false,
       saveUninitialized: false,
-      cookie: { maxAge: 60000 },
+      cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 24 часа
     }),
   );
   app.use(passport.initialize());
