@@ -167,3 +167,6 @@ curl -X GET "http://localhost:3000/stats/cars" \
 # Просмотр логов
 npm run start:dev 2>&1 | grep -i "stats"
 ```
+
+
+

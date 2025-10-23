@@ -14,3 +14,6 @@ const ENTITIES = [CarEntity, AdminEntity];
   exports: [StatsService],
 })
 export class StatsModule {}
+
+
+

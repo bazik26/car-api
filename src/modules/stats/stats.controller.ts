@@ -25,3 +25,6 @@ export class StatsController {
     return this.statsService.getErrorsStats();
   }
 }
+
+
+
