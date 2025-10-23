@@ -11,6 +11,7 @@ import { AdminModule } from './modules/admin/admin.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { CarModule } from './modules/car/car.module';
+import { StatsModule } from './modules/stats/stats.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -40,6 +41,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
     AdminModule,
     AuthModule,
     CarModule,
+    StatsModule,
   ],
 
   controllers: [AppController],
