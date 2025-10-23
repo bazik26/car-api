@@ -3,3 +3,9 @@
 -- Default value is false (0)
 
 ALTER TABLE `cars` ADD COLUMN `promoSold` boolean DEFAULT 0;
+
+
+
+
+
+
