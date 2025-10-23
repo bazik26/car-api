@@ -14,11 +14,12 @@ export class StatsService {
   ) {}
 
   async getProductivityStats() {
-    // Получаем всех админов
-    const admins = await this.adminRepository.find({
-      where: { deletedAt: null },
-      relations: ['cars'],
-    });
+    // Получаем всех админов (не удаленных)
+    const admins = await this.adminRepository
+      .createQueryBuilder('admin')
+      .leftJoinAndSelect('admin.cars', 'cars')
+      .where('admin.deletedAt IS NULL')
+      .getMany();
 
     // Вычисляем статистику для каждого админа
     const adminStats = admins.map(admin => {
@@ -29,14 +30,14 @@ export class StatsService {
 
       return {
         id: admin.id,
-        name: admin.name || admin.email,
+        name: admin.email, // Используем email как имя, так как поля name нет
         email: admin.email,
         carsAdded,
         soldCars,
         errorsCount,
         productivityScore: Math.round(productivityScore),
         lastActivity: admin.updatedAt,
-        isActive: admin.isActive,
+        isActive: !admin.deletedAt, // Активен если не удален
       };
     });
 
@@ -65,10 +66,12 @@ export class StatsService {
   }
 
   async getAdminProductivity(adminId: number) {
-    const admin = await this.adminRepository.findOne({
-      where: { id: adminId, deletedAt: null },
-      relations: ['cars'],
-    });
+    const admin = await this.adminRepository
+      .createQueryBuilder('admin')
+      .leftJoinAndSelect('admin.cars', 'cars')
+      .where('admin.id = :adminId', { adminId })
+      .andWhere('admin.deletedAt IS NULL')
+      .getOne();
 
     if (!admin) {
       throw new Error('Admin not found');
@@ -81,14 +84,14 @@ export class StatsService {
 
     return {
       id: admin.id,
-      name: admin.name || admin.email,
+      name: admin.email, // Используем email как имя
       email: admin.email,
       carsAdded,
       soldCars,
       errorsCount,
       productivityScore: Math.round(productivityScore),
       lastActivity: admin.updatedAt,
-      isActive: admin.isActive,
+      isActive: !admin.deletedAt, // Активен если не удален
     };
   }
 
@@ -102,7 +105,7 @@ export class StatsService {
       .getCount();
 
     // Статистика по месяцам (последние 12 месяцев)
-    const monthlyStats = [];
+    const monthlyStats: { month: string; count: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
