@@ -200,15 +200,29 @@ export class ChatService {
 
   // Отправить сообщение
   async sendMessage(messageData: ChatMessage): Promise<ChatMessageEntity> {
-    console.log('ChatService: Creating message with data:', messageData);
+    console.log('ChatService: Creating message with data:', JSON.stringify(messageData, null, 2));
     try {
+      // Проверяем, что все необходимые поля присутствуют
+      if (!messageData.sessionId) {
+        throw new Error('sessionId is required');
+      }
+      if (!messageData.message) {
+        throw new Error('message is required');
+      }
+      if (!messageData.senderType) {
+        throw new Error('senderType is required');
+      }
+
+      console.log('ChatService: Validating message data...');
       const message = this.chatMessageRepository.create(messageData);
-      console.log('ChatService: Message entity created:', message);
+      console.log('ChatService: Message entity created:', JSON.stringify(message, null, 2));
       
+      console.log('ChatService: Saving message to database...');
       const savedMessage = await this.chatMessageRepository.save(message);
-      console.log('ChatService: Message saved successfully:', savedMessage);
+      console.log('ChatService: Message saved successfully:', JSON.stringify(savedMessage, null, 2));
 
       // Обновить сессию
+      console.log('ChatService: Updating session...');
       const session = await this.getSession(messageData.sessionId);
       if (session) {
         session.lastMessageAt = new Date();
@@ -224,6 +238,8 @@ export class ChatService {
       return savedMessage;
     } catch (error) {
       console.error('ChatService: Error in sendMessage:', error);
+      console.error('ChatService: Error stack:', error.stack);
+      console.error('ChatService: Error message:', error.message);
       throw error;
     }
   }

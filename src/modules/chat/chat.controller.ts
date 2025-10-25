@@ -74,13 +74,16 @@ export class ChatController {
   @Public()
   @Post('message')
   async sendMessage(@Body() messageData: ChatMessage) {
-    console.log('Received message data:', messageData);
+    console.log('ChatController: Received message data:', JSON.stringify(messageData, null, 2));
     try {
+      console.log('ChatController: Calling chatService.sendMessage...');
       const message = await this.chatService.sendMessage(messageData);
-      console.log('Message saved successfully:', message);
+      console.log('ChatController: Message saved successfully:', JSON.stringify(message, null, 2));
       return message;
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error('ChatController: Error saving message:', error);
+      console.error('ChatController: Error stack:', error.stack);
+      console.error('ChatController: Error message:', error.message);
       throw error;
     }
   }
