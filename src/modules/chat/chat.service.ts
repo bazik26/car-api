@@ -86,20 +86,32 @@ export class ChatService {
 
   // Отправить сообщение
   async sendMessage(messageData: ChatMessage): Promise<ChatMessageEntity> {
-    const message = this.chatMessageRepository.create(messageData);
-    const savedMessage = await this.chatMessageRepository.save(message);
+    console.log('ChatService: Creating message with data:', messageData);
+    try {
+      const message = this.chatMessageRepository.create(messageData);
+      console.log('ChatService: Message entity created:', message);
+      
+      const savedMessage = await this.chatMessageRepository.save(message);
+      console.log('ChatService: Message saved successfully:', savedMessage);
 
-    // Обновить сессию
-    const session = await this.getSession(messageData.sessionId);
-    if (session) {
-      session.lastMessageAt = new Date();
-      if (messageData.senderType === 'client') {
-        session.unreadCount += 1;
+      // Обновить сессию
+      const session = await this.getSession(messageData.sessionId);
+      if (session) {
+        session.lastMessageAt = new Date();
+        if (messageData.senderType === 'client') {
+          session.unreadCount += 1;
+        }
+        await this.chatSessionRepository.save(session);
+        console.log('ChatService: Session updated successfully');
+      } else {
+        console.warn('ChatService: Session not found for sessionId:', messageData.sessionId);
       }
-      await this.chatSessionRepository.save(session);
-    }
 
-    return savedMessage;
+      return savedMessage;
+    } catch (error) {
+      console.error('ChatService: Error in sendMessage:', error);
+      throw error;
+    }
   }
 
   // Получить сообщения сессии

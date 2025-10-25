@@ -33,7 +33,15 @@ export class ChatController {
   @Get('sessions')
   @UseGuards(AuthGuard)
   async getActiveSessions() {
-    return await this.chatService.getActiveSessions();
+    console.log('Loading active sessions for admin');
+    try {
+      const sessions = await this.chatService.getActiveSessions();
+      console.log('Active sessions found:', sessions.length);
+      return sessions;
+    } catch (error) {
+      console.error('Error loading active sessions:', error);
+      throw error;
+    }
   }
 
   // Получить сессии по проекту
@@ -57,14 +65,30 @@ export class ChatController {
   @Public()
   @Post('message')
   async sendMessage(@Body() messageData: ChatMessage) {
-    return await this.chatService.sendMessage(messageData);
+    console.log('Received message data:', messageData);
+    try {
+      const message = await this.chatService.sendMessage(messageData);
+      console.log('Message saved successfully:', message);
+      return message;
+    } catch (error) {
+      console.error('Error saving message:', error);
+      throw error;
+    }
   }
 
   // Получить сообщения сессии
   @Public()
   @Get('messages/:sessionId')
   async getSessionMessages(@Param('sessionId') sessionId: string) {
-    return await this.chatService.getSessionMessages(sessionId);
+    console.log('Loading messages for session:', sessionId);
+    try {
+      const messages = await this.chatService.getSessionMessages(sessionId);
+      console.log('Messages loaded successfully:', messages.length);
+      return messages;
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      throw error;
+    }
   }
 
   // Получить непрочитанные сообщения для админа
