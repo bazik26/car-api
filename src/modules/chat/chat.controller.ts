@@ -9,7 +9,15 @@ export class ChatController {
   // Создать новую сессию чата
   @Post('session')
   async createSession(@Body() sessionData: Partial<ChatSession>) {
-    return await this.chatService.createSession(sessionData);
+    console.log('Creating chat session:', sessionData);
+    try {
+      const session = await this.chatService.createSession(sessionData);
+      console.log('Session created successfully:', session);
+      return session;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
   }
 
   // Получить сессию

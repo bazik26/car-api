@@ -45,8 +45,16 @@ export class ChatService {
 
   // Создать новую сессию чата
   async createSession(sessionData: Partial<ChatSession>): Promise<ChatSessionEntity> {
-    const session = this.chatSessionRepository.create(sessionData);
-    return await this.chatSessionRepository.save(session);
+    console.log('ChatService: Creating session with data:', sessionData);
+    try {
+      const session = this.chatSessionRepository.create(sessionData);
+      const savedSession = await this.chatSessionRepository.save(session);
+      console.log('ChatService: Session saved successfully:', savedSession);
+      return savedSession;
+    } catch (error) {
+      console.error('ChatService: Error creating session:', error);
+      throw error;
+    }
   }
 
   // Получить сессию по ID
