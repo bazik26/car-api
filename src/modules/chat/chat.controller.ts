@@ -163,19 +163,17 @@ export class ChatController {
   @Get('db-test')
   async testDatabase() {
     try {
-      // Проверяем, можем ли мы создать тестовое сообщение
-      const testMessage = {
-        sessionId: 'test_db_session',
-        message: 'Database test message',
-        senderType: 'client' as const,
-        clientName: 'Test User',
-        projectSource: 'test'
+      // Простая проверка - создаем сессию без пользователя
+      const testSession = {
+        sessionId: 'test_db_session_' + Date.now(),
+        projectSource: 'test',
+        isActive: true
       };
       
-      const message = await this.chatService.sendMessage(testMessage);
+      const session = await this.chatService.createSession(testSession);
       return {
         message: 'Database is working',
-        testMessage: message,
+        testSession: session,
         timestamp: new Date().toISOString(),
         status: 'OK'
       };
@@ -183,6 +181,31 @@ export class ChatController {
       return {
         message: 'Database error',
         error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        status: 'ERROR'
+      };
+    }
+  }
+
+  // Эндпоинт для проверки админов
+  @Public()
+  @Get('admin-test')
+  async testAdmin() {
+    try {
+      const admins = await this.chatService.getAdmins();
+      return {
+        message: 'Admins check',
+        admins: admins,
+        adminsCount: admins.length,
+        timestamp: new Date().toISOString(),
+        status: 'OK'
+      };
+    } catch (error) {
+      return {
+        message: 'Admin error',
+        error: error.message,
+        stack: error.stack,
         timestamp: new Date().toISOString(),
         status: 'ERROR'
       };

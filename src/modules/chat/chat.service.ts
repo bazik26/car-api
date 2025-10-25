@@ -46,6 +46,7 @@ export class ChatService {
     private userRepository: Repository<UserEntity>,
   ) {}
 
+
   // Создать или найти пользователя по фингерпринту
   async createOrFindUser(fingerprint: string, userData?: {
     name?: string;
@@ -214,7 +215,32 @@ export class ChatService {
       }
 
       console.log('ChatService: Validating message data...');
-      const message = this.chatMessageRepository.create(messageData);
+      
+      // Проверяем, существует ли админ, если указан adminId
+      let validAdminId = null;
+      if (messageData.adminId) {
+        const admin = await this.adminRepository.findOne({ where: { id: messageData.adminId } });
+        if (admin) {
+          validAdminId = messageData.adminId;
+          console.log('ChatService: Admin found:', admin.id);
+        } else {
+          console.warn('ChatService: Admin not found with ID:', messageData.adminId);
+        }
+      }
+      
+      // Создаем сообщение без лишних полей
+      const cleanMessageData = {
+        sessionId: messageData.sessionId,
+        message: messageData.message,
+        senderType: messageData.senderType,
+        clientName: messageData.clientName,
+        clientEmail: messageData.clientEmail,
+        clientPhone: messageData.clientPhone,
+        adminId: validAdminId,
+        projectSource: messageData.projectSource
+      };
+      
+      const message = this.chatMessageRepository.create(cleanMessageData);
       console.log('ChatService: Message entity created:', JSON.stringify(message, null, 2));
       
       console.log('ChatService: Saving message to database...');
@@ -301,6 +327,11 @@ export class ChatService {
       relations: ['assignedAdmin'],
       order: { lastMessageAt: 'DESC' }
     });
+  }
+
+  // Получить всех админов
+  async getAdmins(): Promise<AdminEntity[]> {
+    return await this.adminRepository.find();
   }
 
   // Закрыть сессию
