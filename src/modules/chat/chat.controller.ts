@@ -116,6 +116,17 @@ export class ChatController {
     return await this.chatService.getChatStats();
   }
 
+  // Тестовый эндпоинт для проверки работы
+  @Public()
+  @Get('test')
+  async testEndpoint() {
+    return { 
+      message: 'Chat API is working', 
+      timestamp: new Date().toISOString(),
+      status: 'OK'
+    };
+  }
+
   // Закрыть сессию
   @Post('session/:sessionId/close')
   @UseGuards(AuthGuard)
