@@ -1,12 +1,14 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ChatService, ChatMessage, ChatSession } from './chat.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { Public } from '../auth/public.decorator';
 
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   // Создать новую сессию чата
+  @Public()
   @Post('session')
   async createSession(@Body() sessionData: Partial<ChatSession>) {
     console.log('Creating chat session:', sessionData);
@@ -21,6 +23,7 @@ export class ChatController {
   }
 
   // Получить сессию
+  @Public()
   @Get('session/:sessionId')
   async getSession(@Param('sessionId') sessionId: string) {
     return await this.chatService.getSession(sessionId);
@@ -51,12 +54,14 @@ export class ChatController {
   }
 
   // Отправить сообщение
+  @Public()
   @Post('message')
   async sendMessage(@Body() messageData: ChatMessage) {
     return await this.chatService.sendMessage(messageData);
   }
 
   // Получить сообщения сессии
+  @Public()
   @Get('messages/:sessionId')
   async getSessionMessages(@Param('sessionId') sessionId: string) {
     return await this.chatService.getSessionMessages(sessionId);
