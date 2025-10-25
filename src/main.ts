@@ -18,6 +18,7 @@ async function bootstrap() {
       'https://car-client-production.up.railway.app',
       'https://car-client-old-production.up.railway.app',
       'https://car-client-2-production.up.railway.app',
+      'https://car-client-3-production.up.railway.app',
       'https://car-admin-production-7255.up.railway.app',
       'http://localhost:3001',
       'http://localhost:3000',
@@ -27,6 +28,7 @@ async function bootstrap() {
       'https://auto-c-cars.ru',
       'https://www.auto-c-cars.ru',
       'https://shop-ytb-client.onrender.com',
+      'http://localhost:4202'
     ],
     credentials: true,
   });

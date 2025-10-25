@@ -13,3 +13,4 @@ ALTER TABLE `cars` ADD COLUMN `promoSold` boolean DEFAULT 0;
 
 
 
+
