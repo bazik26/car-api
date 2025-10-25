@@ -158,6 +158,37 @@ export class ChatController {
     };
   }
 
+  // Эндпоинт для проверки базы данных
+  @Public()
+  @Get('db-test')
+  async testDatabase() {
+    try {
+      // Проверяем, можем ли мы создать тестовое сообщение
+      const testMessage = {
+        sessionId: 'test_db_session',
+        message: 'Database test message',
+        senderType: 'client' as const,
+        clientName: 'Test User',
+        projectSource: 'test'
+      };
+      
+      const message = await this.chatService.sendMessage(testMessage);
+      return {
+        message: 'Database is working',
+        testMessage: message,
+        timestamp: new Date().toISOString(),
+        status: 'OK'
+      };
+    } catch (error) {
+      return {
+        message: 'Database error',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        status: 'ERROR'
+      };
+    }
+  }
+
   // Закрыть сессию
   @Post('session/:sessionId/close')
   @UseGuards(AuthGuard)
