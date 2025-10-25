@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessageEntity, ChatSessionEntity } from './chat.entity';
 import { AdminEntity } from '../../db/admin.entity';
+import { UserEntity } from '../../db/user.entity';
 
 export interface ChatMessage {
   id?: number;
@@ -41,13 +42,80 @@ export class ChatService {
     private chatSessionRepository: Repository<ChatSessionEntity>,
     @InjectRepository(AdminEntity)
     private adminRepository: Repository<AdminEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {}
 
+  // Создать или найти пользователя по фингерпринту
+  async createOrFindUser(fingerprint: string, userData?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<UserEntity> {
+    console.log('ChatService: Creating or finding user with fingerprint:', fingerprint);
+    
+    try {
+      let user = await this.userRepository.findOne({
+        where: { fingerprint, isActive: true }
+      });
+
+      if (user) {
+        // Обновляем время последнего визита
+        user.lastSeenAt = new Date();
+        if (userData?.name) user.name = userData.name;
+        if (userData?.email) user.email = userData.email;
+        if (userData?.phone) user.phone = userData.phone;
+        user = await this.userRepository.save(user);
+        console.log('ChatService: User found and updated:', user.id);
+      } else {
+        // Создаем нового пользователя
+        user = this.userRepository.create({
+          fingerprint,
+          name: userData?.name,
+          email: userData?.email,
+          phone: userData?.phone,
+          ipAddress: userData?.ipAddress,
+          userAgent: userData?.userAgent,
+          lastSeenAt: new Date(),
+          isActive: true
+        });
+        user = await this.userRepository.save(user);
+        console.log('ChatService: New user created:', user.id);
+      }
+
+      return user;
+    } catch (error) {
+      console.error('ChatService: Error creating/finding user:', error);
+      throw error;
+    }
+  }
+
   // Создать новую сессию чата
-  async createSession(sessionData: Partial<ChatSession>): Promise<ChatSessionEntity> {
+  async createSession(sessionData: Partial<ChatSession> & {
+    userFingerprint?: string;
+    userData?: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      ipAddress?: string;
+      userAgent?: string;
+    };
+  }): Promise<ChatSessionEntity> {
     console.log('ChatService: Creating session with data:', sessionData);
     try {
-      const session = this.chatSessionRepository.create(sessionData);
+      let user: UserEntity | null = null;
+      
+      // Если есть фингерпринт, создаем или находим пользователя
+      if (sessionData.userFingerprint) {
+        user = await this.createOrFindUser(sessionData.userFingerprint, sessionData.userData);
+      }
+
+      const session = this.chatSessionRepository.create({
+        ...sessionData,
+        userId: user?.id
+      });
       const savedSession = await this.chatSessionRepository.save(session);
       console.log('ChatService: Session saved successfully:', savedSession);
       return savedSession;
@@ -61,8 +129,54 @@ export class ChatService {
   async getSession(sessionId: string): Promise<ChatSessionEntity | null> {
     return await this.chatSessionRepository.findOne({
       where: { sessionId },
-      relations: ['assignedAdmin']
+      relations: ['assignedAdmin', 'user']
     });
+  }
+
+  // Получить историю чата пользователя по фингерпринту
+  async getUserChatHistory(fingerprint: string): Promise<{
+    user: UserEntity;
+    sessions: ChatSessionEntity[];
+    messages: ChatMessageEntity[];
+  }> {
+    console.log('ChatService: Getting chat history for fingerprint:', fingerprint);
+    
+    try {
+      // Находим пользователя
+      const user = await this.userRepository.findOne({
+        where: { fingerprint, isActive: true }
+      });
+
+      if (!user) {
+        return { user: null, sessions: [], messages: [] };
+      }
+
+      // Получаем все сессии пользователя
+      const sessions = await this.chatSessionRepository.find({
+        where: { userId: user.id },
+        relations: ['assignedAdmin'],
+        order: { createdAt: 'DESC' }
+      });
+
+      // Получаем все сообщения из всех сессий
+      const sessionIds = sessions.map(s => s.sessionId);
+      const messages = sessionIds.length > 0 ? await this.chatMessageRepository
+        .createQueryBuilder('message')
+        .where('message.sessionId IN (:...sessionIds)', { sessionIds })
+        .orderBy('message.createdAt', 'ASC')
+        .getMany() : [];
+
+      console.log('ChatService: Found user history:', {
+        userId: user.id,
+        sessionsCount: sessions.length,
+        messagesCount: messages.length
+      });
+
+      return { user, sessions, messages };
+    } catch (error) {
+      console.error('ChatService: Error getting user chat history:', error);
+      throw error;
+    }
   }
 
   // Получить все активные сессии

@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { AdminEntity } from '../../db/admin.entity';
+import { UserEntity } from '../../db/user.entity';
 
 @Entity('chat_messages')
 export class ChatMessageEntity {
@@ -73,6 +74,13 @@ export class ChatSessionEntity {
   @ManyToOne(() => AdminEntity, { nullable: true })
   @JoinColumn({ name: 'assignedAdminId' })
   assignedAdmin: AdminEntity;
+
+  @Column({ type: 'int', nullable: true })
+  userId: number;
+
+  @ManyToOne(() => UserEntity, user => user.chatSessions, { nullable: true })
+  @JoinColumn({ name: 'userId' })
+  user: UserEntity;
 
   @Column({ type: 'timestamp', nullable: true })
   lastMessageAt: Date;

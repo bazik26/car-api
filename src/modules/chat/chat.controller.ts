@@ -10,7 +10,16 @@ export class ChatController {
   // Создать новую сессию чата
   @Public()
   @Post('session')
-  async createSession(@Body() sessionData: Partial<ChatSession>) {
+  async createSession(@Body() sessionData: Partial<ChatSession> & {
+    userFingerprint?: string;
+    userData?: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      ipAddress?: string;
+      userAgent?: string;
+    };
+  }) {
     console.log('Creating chat session:', sessionData);
     try {
       const session = await this.chatService.createSession(sessionData);
@@ -114,6 +123,25 @@ export class ChatController {
   @UseGuards(AuthGuard)
   async getChatStats() {
     return await this.chatService.getChatStats();
+  }
+
+  // Получить историю чата пользователя по фингерпринту
+  @Public()
+  @Get('history/:fingerprint')
+  async getUserChatHistory(@Param('fingerprint') fingerprint: string) {
+    console.log('Getting chat history for fingerprint:', fingerprint);
+    try {
+      const history = await this.chatService.getUserChatHistory(fingerprint);
+      console.log('Chat history loaded successfully:', {
+        user: history.user?.id,
+        sessions: history.sessions.length,
+        messages: history.messages.length
+      });
+      return history;
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      throw error;
+    }
   }
 
   // Тестовый эндпоинт для проверки работы
