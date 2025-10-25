@@ -135,7 +135,7 @@ export class ChatService {
 
   // Получить историю чата пользователя по фингерпринту
   async getUserChatHistory(fingerprint: string): Promise<{
-    user: UserEntity;
+    user: UserEntity | null;
     sessions: ChatSessionEntity[];
     messages: ChatMessageEntity[];
   }> {
