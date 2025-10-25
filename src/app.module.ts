@@ -7,16 +7,18 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AdminEntity } from './db/admin.entity';
 import { CarEntity } from './db/car.entity';
 import { FileEntity } from './db/file.entity';
+import { ChatMessageEntity, ChatSessionEntity } from './modules/chat/chat.entity';
 import { AdminModule } from './modules/admin/admin.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { CarModule } from './modules/car/car.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-const ENTITIES = [AdminEntity, CarEntity, FileEntity];
+const ENTITIES = [AdminEntity, CarEntity, FileEntity, ChatMessageEntity, ChatSessionEntity];
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity];
     AuthModule,
     CarModule,
     StatsModule,
+    ChatModule,
   ],
 
   controllers: [AppController],
