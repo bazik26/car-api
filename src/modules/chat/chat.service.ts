@@ -117,7 +117,7 @@ export class ChatService {
   // Отметить сообщения как прочитанные
   async markMessagesAsRead(sessionId: string, adminId: number): Promise<void> {
     await this.chatMessageRepository.update(
-      { sessionId, adminId: null },
+      { sessionId, senderType: 'client' },
       { isRead: true }
     );
 
