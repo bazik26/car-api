@@ -217,7 +217,7 @@ export class ChatService {
       console.log('ChatService: Validating message data...');
       
       // Проверяем, существует ли админ, если указан adminId
-      let validAdminId = null;
+      let validAdminId: number | null = null;
       if (messageData.adminId) {
         const admin = await this.adminRepository.findOne({ where: { id: messageData.adminId } });
         if (admin) {
@@ -229,14 +229,14 @@ export class ChatService {
       }
       
       // Создаем сообщение без лишних полей
-      const cleanMessageData = {
+      const cleanMessageData: Partial<ChatMessageEntity> = {
         sessionId: messageData.sessionId,
         message: messageData.message,
         senderType: messageData.senderType,
         clientName: messageData.clientName,
         clientEmail: messageData.clientEmail,
         clientPhone: messageData.clientPhone,
-        adminId: validAdminId,
+        adminId: validAdminId || undefined,
         projectSource: messageData.projectSource
       };
       
@@ -246,6 +246,11 @@ export class ChatService {
       console.log('ChatService: Saving message to database...');
       const savedMessage = await this.chatMessageRepository.save(message);
       console.log('ChatService: Message saved successfully:', JSON.stringify(savedMessage, null, 2));
+      
+      // Убеждаемся, что возвращаем правильный тип
+      if (Array.isArray(savedMessage)) {
+        return savedMessage[0];
+      }
 
       // Обновить сессию
       console.log('ChatService: Updating session...');
