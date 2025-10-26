@@ -134,6 +134,44 @@ export class ChatService {
     });
   }
 
+  // Обновить данные сессии
+  async updateSession(sessionId: string, updateData: {
+    clientName?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+  }): Promise<ChatSessionEntity | null> {
+    console.log('Updating session:', sessionId, 'with data:', updateData);
+    
+    try {
+      const session = await this.chatSessionRepository.findOne({
+        where: { sessionId }
+      });
+
+      if (!session) {
+        console.log('Session not found:', sessionId);
+        return null;
+      }
+
+      // Обновляем поля
+      if (updateData.clientName !== undefined) {
+        session.clientName = updateData.clientName;
+      }
+      if (updateData.clientEmail !== undefined) {
+        session.clientEmail = updateData.clientEmail;
+      }
+      if (updateData.clientPhone !== undefined) {
+        session.clientPhone = updateData.clientPhone;
+      }
+
+      const updatedSession = await this.chatSessionRepository.save(session);
+      console.log('Session updated successfully:', updatedSession);
+      return updatedSession;
+    } catch (error) {
+      console.error('Error updating session:', error);
+      throw error;
+    }
+  }
+
   // Получить историю чата пользователя по фингерпринту
   async getUserChatHistory(fingerprint: string): Promise<{
     user: UserEntity | null;

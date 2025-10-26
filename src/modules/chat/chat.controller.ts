@@ -38,6 +38,16 @@ export class ChatController {
     return await this.chatService.getSession(sessionId);
   }
 
+  // Обновить данные сессии
+  @Public()
+  @Put('session/:sessionId')
+  async updateSession(
+    @Param('sessionId') sessionId: string,
+    @Body() updateData: { clientName?: string; clientEmail?: string; clientPhone?: string }
+  ) {
+    return await this.chatService.updateSession(sessionId, updateData);
+  }
+
   // Получить все активные сессии (только для админов)
   @Get('sessions')
   @UseGuards(AuthGuard)
