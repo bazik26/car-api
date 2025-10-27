@@ -40,3 +40,4 @@ export class UserEntity {
   @OneToMany(() => ChatSessionEntity, session => session.user)
   chatSessions: ChatSessionEntity[];
 }
+

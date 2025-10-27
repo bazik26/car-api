@@ -32,3 +32,4 @@ CREATE INDEX `IDX_chat_sessions_createdAt` ON `chat_sessions` (`createdAt`);
 CREATE INDEX `IDX_chat_messages_sessionId` ON `chat_messages` (`sessionId`);
 CREATE INDEX `IDX_chat_messages_createdAt` ON `chat_messages` (`createdAt`);
 CREATE INDEX `IDX_chat_messages_senderType` ON `chat_messages` (`senderType`);
+

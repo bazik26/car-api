@@ -28,7 +28,11 @@ async function bootstrap() {
       'https://auto-c-cars.ru',
       'https://www.auto-c-cars.ru',
       'https://shop-ytb-client.onrender.com',
-      'http://localhost:4202'
+      'http://localhost:4202',
+      'https://autobroker-yar.ru',
+      'https://www.autobroker-yar.ru',
+      'https://putinxuylo.ru',
+      'https://www.putinxuylo.ru'
     ],
     credentials: true,
   });

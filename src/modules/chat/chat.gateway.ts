@@ -27,6 +27,10 @@ import { ChatService } from './chat.service';
       'https://auto-c-cars.ru',
       'https://www.auto-c-cars.ru',
       'https://shop-ytb-client.onrender.com',
+      'https://autobroker-yar.ru',
+      'https://www.autobroker-yar.ru',
+      'https://putinxuylo.ru',
+      'https://www.putinxuylo.ru'
     ],
     credentials: true,
   },
@@ -174,3 +178,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 }
+
