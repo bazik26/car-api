@@ -138,6 +138,21 @@ export class CarController {
     return this.carService.markCarAsAvailable(carId);
   }
 
+  @Get('/yml-export')
+  @Public()
+  async getYmlExport(@Res() res: Response) {
+    try {
+      const cars = await this.carService.getActiveCarsForYml();
+      const xmlContent = this.carService.generateYmlXml(cars);
+
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.send(xmlContent);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   @Get('/:carId/:filename')
   @Public()
   async getCarImage(

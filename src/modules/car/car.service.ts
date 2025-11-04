@@ -269,4 +269,168 @@ export class CarService {
   async markCarAsAvailable(carId: number) {
     await this.carRepo.update(carId, { isSold: false });
   }
+
+  async getActiveCarsForYml() {
+    return await this.carRepo
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
+      .where('car.isSold = :isSold', { isSold: false })
+      .andWhere('car.deletedAt IS NULL')
+      .orderBy('car.id', 'DESC')
+      .getMany();
+  }
+
+  generateYmlXml(cars: CarEntity[]): string {
+    const currentDate = new Date().toISOString();
+    const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
+    const ymlHeader = `<yml_catalog date="${currentDate}">
+<shop>
+<name>Adena Trans</name>
+<company>Adena Trans Company</company>
+<url>https://adenatrans.ru/</url>
+<currencies>
+<currency id="RUB" rate="1"/>
+</currencies>
+<categories>
+<category id="1">Автомобили</category>
+<category id="2" parentId="1">Кроссоверы</category>
+<category id="3" parentId="1">Седаны</category>
+<category id="4" parentId="1">Хэтчбеки</category>
+<category id="5" parentId="1">Универсалы</category>
+<category id="6" parentId="1">Купе</category>
+<category id="7" parentId="1">Кабриолеты</category>
+</categories>
+<delivery-options>
+<option cost="0" days="1-3"/>
+</delivery-options>
+<offers>`;
+
+    const offersXml = cars
+      .filter((car) => !car.deletedAt)
+      .map((car) => {
+        const categoryId = this.getCategoryId(car);
+        const carName = this.generateCarName(car);
+        const description = this.generateDescription(car);
+        const imageUrl = this.getImageUrl(car);
+
+        return `
+<offer id="${car.id}" available="true">
+<url>https://adenatrans.ru/car/${car.id}</url>
+<price>${car.price || 0}</price>
+<currencyId>RUB</currencyId>
+<categoryId>${categoryId}</categoryId>
+<picture>${imageUrl}</picture>
+<vendor>${this.escapeXml(car.brand || '')}</vendor>
+<vendorCode>${this.escapeXml(car.vin || '')}</vendorCode>
+<name>${this.escapeXml(carName)}</name>
+<description>
+<![CDATA[${description}]]>
+</description>
+<pickup>true</pickup>
+<delivery>true</delivery>
+</offer>`;
+      })
+      .join('');
+
+    const ymlFooter = `
+</offers>
+</shop>
+</yml_catalog>`;
+
+    return xmlHeader + ymlHeader + offersXml + ymlFooter;
+  }
+
+  private getCategoryId(car: CarEntity): number {
+    const model = car.model?.toLowerCase() || '';
+    if (
+      model.includes('x') ||
+      model.includes('q') ||
+      model.includes('cross') ||
+      model.includes('sport') ||
+      model.includes('crossover') ||
+      model.includes('suv')
+    ) {
+      return 2; // Кроссоверы
+    }
+    return 1; // Автомобили (по умолчанию)
+  }
+
+  private generateCarName(car: CarEntity): string {
+    const year = car.year || '';
+    const price = car.price || 0;
+    const formattedPrice = price.toLocaleString('ru-RU');
+
+    return `Авто с пробегом ${car.brand} ${car.model} ${year} год. Цена ${formattedPrice} ₽`;
+  }
+
+  private generateDescription(car: CarEntity): string {
+    const mileage = car.mileage || 0;
+    const engine = car.engine || 0;
+    const power = car.powerValue || 0;
+    const fuel = this.getFuelType(car.fuel || '');
+    const drive = this.getDriveType(car.drive || '');
+    const gearbox = this.getGearboxType(car.gearbox || '');
+
+    const formattedMileage = mileage.toLocaleString('ru-RU');
+    const powerText = power > 0 ? `${power}Л/C` : '';
+    const engineText = engine > 0 ? `${engine}л` : '';
+
+    return `Как новый! Состояние идеал ${formattedMileage} км пробег ${engineText}(${powerText}) ${fuel}. ${drive}. ${gearbox}.`;
+  }
+
+  private getFuelType(fuel: string): string {
+    const fuelLower = fuel.toLowerCase();
+    if (fuelLower.includes('дизель') || fuelLower.includes('diesel'))
+      return 'Дизель';
+    if (fuelLower.includes('гибрид') || fuelLower.includes('hybrid'))
+      return 'Гибрид';
+    if (fuelLower.includes('электро') || fuelLower.includes('electric'))
+      return 'Электро';
+    return 'Бензин';
+  }
+
+  private getDriveType(drive: string): string {
+    const driveLower = drive.toLowerCase();
+    if (
+      driveLower.includes('полный') ||
+      driveLower.includes('awd') ||
+      driveLower.includes('4wd')
+    )
+      return 'Полный привод';
+    if (driveLower.includes('задний') || driveLower.includes('rwd'))
+      return 'Задний привод';
+    return 'Передний привод';
+  }
+
+  private getGearboxType(gearbox: string): string {
+    const gearboxLower = gearbox.toLowerCase();
+    if (gearboxLower.includes('автомат') || gearboxLower.includes('automatic'))
+      return 'Автомат';
+    if (gearboxLower.includes('механик') || gearboxLower.includes('manual'))
+      return 'Механика';
+    if (gearboxLower.includes('вариатор') || gearboxLower.includes('cvt'))
+      return 'Вариатор';
+    return 'Автомат';
+  }
+
+  private escapeXml(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private getImageUrl(car: CarEntity): string {
+    if (car.files && car.files.length > 0) {
+      const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
+      if (firstFile) {
+        const carIdPadded = car.id.toString().padStart(6, '0');
+        return `https://adenatrans.ru/api/images/cars/${carIdPadded}/${firstFile.filename}`;
+      }
+    }
+    return `https://adenatrans.ru/api/images/cars/${car.id}`;
+  }
 }
