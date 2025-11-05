@@ -396,7 +396,7 @@ export class LeadService {
     }
 
     if (data.completed !== undefined && data.completed && !task.completed) {
-      data.completedAt = new Date();
+      task.completedAt = new Date();
       if (adminId) {
         await this.createActivity({
           leadId: task.leadId,
