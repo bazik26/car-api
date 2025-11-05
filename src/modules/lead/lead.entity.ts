@@ -6,9 +6,15 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   JoinColumn,
 } from 'typeorm';
 import { AdminEntity } from '../../db/admin.entity';
+import { LeadActivityEntity } from './lead-activity.entity';
+import { LeadTaskEntity } from './lead-task.entity';
+import { LeadTagEntity } from './lead-tag.entity';
+import { LeadAttachmentEntity } from './lead-attachment.entity';
+import { LeadMeetingEntity } from './lead-meeting.entity';
 
 export enum LeadSource {
   CHAT = 'chat',
@@ -90,6 +96,36 @@ export class LeadEntity {
 
   @OneToMany(() => LeadCommentEntity, (comment) => comment.lead, { cascade: true })
   comments: LeadCommentEntity[];
+
+  @OneToMany(() => LeadActivityEntity, (activity) => activity.lead, { cascade: true })
+  activities: LeadActivityEntity[];
+
+  @OneToMany(() => LeadTaskEntity, (task) => task.lead, { cascade: true })
+  tasks: LeadTaskEntity[];
+
+  @ManyToMany(() => LeadTagEntity, (tag) => tag.leads)
+  tags: LeadTagEntity[];
+
+  @OneToMany(() => LeadAttachmentEntity, (attachment) => attachment.lead, { cascade: true })
+  attachments: LeadAttachmentEntity[];
+
+  @OneToMany(() => LeadMeetingEntity, (meeting) => meeting.lead, { cascade: true })
+  meetings: LeadMeetingEntity[];
+
+  @Column({ type: 'int', default: 0 })
+  score: number;
+
+  @Column({ type: 'boolean', default: false })
+  convertedToClient: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  convertedAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastContactedAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  nextFollowUpDate: Date;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -10,6 +10,11 @@ import { FileEntity } from './db/file.entity';
 import { UserEntity } from './db/user.entity';
 import { ChatMessageEntity, ChatSessionEntity } from './modules/chat/chat.entity';
 import { LeadEntity, LeadCommentEntity } from './modules/lead/lead.entity';
+import { LeadActivityEntity } from './modules/lead/lead-activity.entity';
+import { LeadTaskEntity } from './modules/lead/lead-task.entity';
+import { LeadTagEntity } from './modules/lead/lead-tag.entity';
+import { LeadAttachmentEntity } from './modules/lead/lead-attachment.entity';
+import { LeadMeetingEntity } from './modules/lead/lead-meeting.entity';
 import { AdminModule } from './modules/admin/admin.module';
 
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,7 +27,21 @@ import { LeadModule } from './modules/lead/lead.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-const ENTITIES = [AdminEntity, CarEntity, FileEntity, UserEntity, ChatMessageEntity, ChatSessionEntity, LeadEntity, LeadCommentEntity];
+const ENTITIES = [
+  AdminEntity,
+  CarEntity,
+  FileEntity,
+  UserEntity,
+  ChatMessageEntity,
+  ChatSessionEntity,
+  LeadEntity,
+  LeadCommentEntity,
+  LeadActivityEntity,
+  LeadTaskEntity,
+  LeadTagEntity,
+  LeadAttachmentEntity,
+  LeadMeetingEntity,
+];
 
 @Module({
   imports: [

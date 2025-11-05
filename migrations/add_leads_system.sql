@@ -39,3 +39,4 @@ CREATE TABLE IF NOT EXISTS `lead_comments` (
   CONSTRAINT `FK_lead_comments_adminId` FOREIGN KEY (`adminId`) REFERENCES `admins` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+

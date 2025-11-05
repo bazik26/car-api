@@ -42,3 +42,4 @@ CREATE INDEX `IDX_chat_messages_senderType` ON `chat_messages` (`senderType`);
 
 
 
+
