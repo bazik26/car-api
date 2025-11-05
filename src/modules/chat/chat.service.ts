@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessageEntity, ChatSessionEntity } from './chat.entity';
 import { AdminEntity } from '../../db/admin.entity';
 import { UserEntity } from '../../db/user.entity';
+import { LeadService } from '../lead/lead.service';
+import { LeadSource } from '../lead/lead.entity';
 
 export interface ChatMessage {
   id?: number;
@@ -44,6 +46,8 @@ export class ChatService {
     private adminRepository: Repository<AdminEntity>,
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
+    @Inject(forwardRef(() => LeadService))
+    private leadService: LeadService,
   ) {}
 
 
@@ -297,9 +301,26 @@ export class ChatService {
         session.lastMessageAt = new Date();
         if (messageData.senderType === 'client') {
           session.unreadCount += 1;
+          
+          // Обновляем данные клиента в сессии, если они указаны
+          if (messageData.clientName) session.clientName = messageData.clientName;
+          if (messageData.clientEmail) session.clientEmail = messageData.clientEmail;
+          if (messageData.clientPhone) session.clientPhone = messageData.clientPhone;
         }
         await this.chatSessionRepository.save(session);
         console.log('ChatService: Session updated successfully');
+        
+        // Автоматически создаем лид, если клиент оставил контакты
+        if (messageData.senderType === 'client' && 
+            messageData.clientName && 
+            (messageData.clientPhone || messageData.clientEmail)) {
+          try {
+            await this.createLeadFromSessionIfNeeded(session);
+          } catch (error) {
+            console.error('ChatService: Error creating lead from session:', error);
+            // Не прерываем выполнение, если не удалось создать лид
+          }
+        }
       } else {
         console.warn('ChatService: Session not found for sessionId:', messageData.sessionId);
       }
@@ -383,5 +404,28 @@ export class ChatService {
       { sessionId },
       { isActive: false }
     );
+  }
+
+  // Автоматически создать лид из сессии, если есть контакты
+  private async createLeadFromSessionIfNeeded(session: ChatSessionEntity): Promise<void> {
+    // Проверяем, что есть имя и хотя бы один контакт
+    if (!session.clientName || (!session.clientPhone && !session.clientEmail)) {
+      return;
+    }
+
+    try {
+      // Используем метод createLeadFromChatSession, который проверяет дубликаты
+      await this.leadService.createLeadFromChatSession(
+        session.sessionId,
+        session.assignedAdminId || undefined
+      );
+      console.log('ChatService: Lead automatically created from chat session:', session.sessionId);
+    } catch (error) {
+      // Если лид уже существует, это нормально
+      if (error.message && error.message.includes('already exists')) {
+        return;
+      }
+      throw error;
+    }
   }
 }

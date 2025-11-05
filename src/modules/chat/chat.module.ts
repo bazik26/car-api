@@ -6,10 +6,12 @@ import { ChatGateway } from './chat.gateway';
 import { ChatMessageEntity, ChatSessionEntity } from './chat.entity';
 import { UserEntity } from '../../db/user.entity';
 import { AdminEntity } from '../../db/admin.entity';
+import { LeadModule } from '../lead/lead.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChatMessageEntity, ChatSessionEntity, AdminEntity, UserEntity])
+    TypeOrmModule.forFeature([ChatMessageEntity, ChatSessionEntity, AdminEntity, UserEntity]),
+    LeadModule
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

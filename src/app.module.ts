@@ -55,5 +55,6 @@ const ENTITIES = [AdminEntity, CarEntity, FileEntity, UserEntity, ChatMessageEnt
 
   controllers: [AppController],
   providers: [AppService],
+  exports: [AppService],
 })
 export class AppModule {}
