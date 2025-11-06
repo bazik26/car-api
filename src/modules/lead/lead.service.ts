@@ -361,18 +361,22 @@ export class LeadService {
     };
   }
 
-  async getUnprocessedLeadsCount(): Promise<number> {
+  async getUnprocessedLeadsCount(admin?: AdminEntity): Promise<number> {
     // Необработанные лиды: высокий score (>= 50) или не назначены админу, статус new или in_progress
-    const unprocessedLeads = await this.leadRepository
+    const queryBuilder = this.leadRepository
       .createQueryBuilder('lead')
       .where('(lead.score >= :minScore OR lead.assignedAdminId IS NULL)', { minScore: 50 })
       .andWhere('(lead.status = :statusNew OR lead.status = :statusInProgress)', {
         statusNew: LeadStatus.NEW,
         statusInProgress: LeadStatus.IN_PROGRESS,
-      })
-      .getCount();
+      });
 
-    return unprocessedLeads;
+    // Для не-суперадминов фильтруем по projectId
+    if (admin && !admin.isSuper && admin.projectId) {
+      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: admin.projectId });
+    }
+
+    return await queryBuilder.getCount();
   }
 
   // ==================== ACTIVITY LOG ====================

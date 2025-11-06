@@ -125,8 +125,9 @@ export class LeadController {
   // Получить количество необработанных лидов
   @Get('stats/unprocessed-count')
   @Public()
-  async getUnprocessedLeadsCount() {
-    const count = await this.leadService.getUnprocessedLeadsCount();
+  async getUnprocessedLeadsCount(@Req() req?: any) {
+    const admin = req?.user;
+    const count = await this.leadService.getUnprocessedLeadsCount(admin);
     return { count };
   }
 
