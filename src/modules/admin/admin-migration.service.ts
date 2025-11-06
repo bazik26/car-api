@@ -18,23 +18,19 @@ export class AdminMigrationService implements OnModuleInit {
 
   async migrateAdminData() {
     try {
-      // Получаем всех админов, у которых нет projectId или permissions
-      const adminsToUpdate = await this.adminRepository
+      // Получаем всех активных админов
+      const allAdmins = await this.adminRepository
         .createQueryBuilder('admin')
         .where('admin.deletedAt IS NULL')
-        .andWhere(
-          '(admin.projectId IS NULL OR admin.permissions IS NULL OR admin.permissions = :emptyJson)',
-          { emptyJson: '{}' },
-        )
         .getMany();
 
-      if (adminsToUpdate.length === 0) {
-        console.log('AdminMigrationService: No admins need migration');
+      if (allAdmins.length === 0) {
+        console.log('AdminMigrationService: No active admins found');
         return;
       }
 
       console.log(
-        `AdminMigrationService: Found ${adminsToUpdate.length} admins to migrate`,
+        `AdminMigrationService: Found ${allAdmins.length} active admins`,
       );
 
       const defaultPermissions = {
@@ -44,25 +40,44 @@ export class AdminMigrationService implements OnModuleInit {
         canViewLeads: true,
       };
 
-      // Обновляем каждого админа
-      for (const admin of adminsToUpdate) {
+      let updatedCount = 0;
+
+      // Обновляем каждого админа, у которого нет projectId или permissions
+      for (const admin of allAdmins) {
+        const needsUpdate =
+          !admin.projectId ||
+          !admin.permissions ||
+          typeof admin.permissions !== 'object' ||
+          Object.keys(admin.permissions).length === 0;
+
+        if (!needsUpdate) {
+          continue;
+        }
+
         const updateData: Partial<AdminEntity> = {
           projectId: admin.projectId || ProjectType.OFFICE_1,
           permissions:
-            admin.permissions && Object.keys(admin.permissions).length > 0
+            admin.permissions &&
+            typeof admin.permissions === 'object' &&
+            Object.keys(admin.permissions).length > 0
               ? admin.permissions
               : defaultPermissions,
         };
 
         await this.adminRepository.update(admin.id, updateData);
+        updatedCount++;
         console.log(
           `AdminMigrationService: Updated admin ${admin.id} (${admin.email})`,
         );
       }
 
-      console.log(
-        `AdminMigrationService: Successfully migrated ${adminsToUpdate.length} admins`,
-      );
+      if (updatedCount === 0) {
+        console.log('AdminMigrationService: All admins already have projectId and permissions');
+      } else {
+        console.log(
+          `AdminMigrationService: Successfully migrated ${updatedCount} admins`,
+        );
+      }
     } catch (error) {
       console.error('AdminMigrationService: Error during migration:', error);
       // Не бросаем ошибку, чтобы приложение могло запуститься
