@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CarEntity } from '../../db/car.entity';
 import { AdminEntity } from '../../db/admin.entity';
-import { LeadEntity } from '../lead/lead.entity';
+import { LeadEntity, LeadStatus } from '../lead/lead.entity';
 
 @Injectable()
 export class StatsService {
@@ -90,25 +90,25 @@ export class StatsService {
     const openLeads = await this.leadRepository.count({ 
       where: { 
         assignedAdminId: adminId,
-        status: 'new' 
+        status: LeadStatus.NEW 
       } 
     });
     const inProgressLeads = await this.leadRepository.count({ 
       where: { 
         assignedAdminId: adminId,
-        status: 'in_progress' 
+        status: LeadStatus.IN_PROGRESS 
       } 
     });
     const closedLeads = await this.leadRepository.count({ 
       where: { 
         assignedAdminId: adminId,
-        status: 'closed' 
+        status: LeadStatus.CLOSED 
       } 
     });
     const lostLeads = await this.leadRepository.count({ 
       where: { 
         assignedAdminId: adminId,
-        status: 'lost' 
+        status: LeadStatus.LOST 
       } 
     });
 
