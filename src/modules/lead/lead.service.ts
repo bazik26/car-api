@@ -322,6 +322,20 @@ export class LeadService {
     };
   }
 
+  async getUnprocessedLeadsCount(): Promise<number> {
+    // Необработанные лиды: высокий score (>= 50) или не назначены админу, статус new или in_progress
+    const unprocessedLeads = await this.leadRepository
+      .createQueryBuilder('lead')
+      .where('(lead.score >= :minScore OR lead.assignedAdminId IS NULL)', { minScore: 50 })
+      .andWhere('(lead.status = :statusNew OR lead.status = :statusInProgress)', {
+        statusNew: LeadStatus.NEW,
+        statusInProgress: LeadStatus.IN_PROGRESS,
+      })
+      .getCount();
+
+    return unprocessedLeads;
+  }
+
   // ==================== ACTIVITY LOG ====================
 
   async createActivity(data: {
