@@ -23,6 +23,7 @@ export interface CreateLeadDto {
   chatSessionId?: string;
   assignedAdminId?: number;
   description?: string;
+  projectSource?: string;
 }
 
 export interface UpdateLeadDto {
@@ -36,6 +37,7 @@ export interface UpdateLeadDto {
   telegramUsername?: string;
   assignedAdminId?: number;
   description?: string;
+  projectId?: ProjectType;
 }
 
 export interface CreateLeadCommentDto {
@@ -68,10 +70,16 @@ export class LeadService {
   ) {}
 
   // Создать лид
-  async createLead(createLeadDto: CreateLeadDto, adminId?: number): Promise<LeadEntity> {
+  async createLead(createLeadDto: CreateLeadDto, adminId?: number, admin?: AdminEntity): Promise<LeadEntity> {
+    // Устанавливаем projectId и projectSource на основе админа
+    const projectId = admin?.projectId || ProjectType.OFFICE_1;
+    // projectSource может быть передан явно (например, из чата) или берется из админа
+    const projectSource = createLeadDto.projectSource || (admin?.projectId === ProjectType.OFFICE_1 ? 'office_1' : admin?.projectId === ProjectType.OFFICE_2 ? 'office_2' : 'manual');
+    
     const lead = this.leadRepository.create({
       ...createLeadDto,
-      projectId: ProjectType.OFFICE_1, // По умолчанию первый офис
+      projectId,
+      projectSource,
     });
     const savedLead = await this.leadRepository.save(lead);
 
@@ -123,6 +131,7 @@ export class LeadService {
       chatSessionId: session.sessionId,
       assignedAdminId: assignedAdminId || session.assignedAdminId || undefined,
       projectId: session.projectId || ProjectType.OFFICE_1, // Используем projectId из сессии или дефолт
+      projectSource: session.projectSource || 'chat', // Используем projectSource из сессии
     });
 
     return await this.leadRepository.save(lead);
@@ -136,6 +145,7 @@ export class LeadService {
       assignedAdminId?: number;
       search?: string;
     },
+    admin?: AdminEntity,
   ): Promise<LeadEntity[]> {
     const queryBuilder = this.leadRepository
       .createQueryBuilder('lead')
@@ -143,6 +153,11 @@ export class LeadService {
       .leftJoinAndSelect('lead.comments', 'comments')
       .leftJoinAndSelect('comments.admin', 'commentAdmin')
       .orderBy('lead.createdAt', 'DESC');
+
+    // Для не-суперадминов фильтруем по projectId
+    if (admin && !admin.isSuper && admin.projectId) {
+      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: admin.projectId });
+    }
 
     if (filters?.status) {
       queryBuilder.andWhere('lead.status = :status', { status: filters.status });
@@ -207,8 +222,19 @@ export class LeadService {
     id: number,
     updateLeadDto: UpdateLeadDto,
     adminId?: number,
+    admin?: AdminEntity,
   ): Promise<LeadEntity> {
     const lead = await this.getLeadById(id);
+    
+    // Для не-суперадминов проверяем, что лид принадлежит их офису
+    if (admin && !admin.isSuper) {
+      if (lead.projectId !== admin.projectId) {
+        throw new Error('Нет доступа к редактированию этого лида');
+      }
+      // Всегда устанавливаем projectId на основе админа (безопасность)
+      updateLeadDto.projectId = admin.projectId || ProjectType.OFFICE_1;
+    }
+    
     const oldValues = { ...lead };
 
     Object.assign(lead, updateLeadDto);
@@ -255,8 +281,16 @@ export class LeadService {
   }
 
   // Удалить лид
-  async deleteLead(id: number): Promise<void> {
+  async deleteLead(id: number, admin?: AdminEntity): Promise<void> {
     const lead = await this.getLeadById(id);
+    
+    // Для не-суперадминов проверяем, что лид принадлежит их офису
+    if (admin && !admin.isSuper) {
+      if (lead.projectId !== admin.projectId) {
+        throw new Error('Нет доступа к удалению этого лида');
+      }
+    }
+    
     await this.leadRepository.remove(lead);
   }
 

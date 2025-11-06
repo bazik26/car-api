@@ -95,6 +95,9 @@ export class LeadEntity {
   @Column({ type: 'enum', enum: ProjectType, nullable: true, default: ProjectType.OFFICE_1 })
   projectId: ProjectType;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  projectSource: string;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

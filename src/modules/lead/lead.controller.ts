@@ -29,7 +29,8 @@ export class LeadController {
   @Post()
   async createLead(@Body() createLeadDto: CreateLeadDto, @Req() req?: any) {
     const adminId = req?.user?.id;
-    return await this.leadService.createLead(createLeadDto, adminId);
+    const admin = req?.user;
+    return await this.leadService.createLead(createLeadDto, adminId, admin);
   }
 
   // Создать лид из чат-сессии
@@ -51,13 +52,15 @@ export class LeadController {
     @Query('source') source?: LeadSource,
     @Query('assignedAdminId') assignedAdminId?: number,
     @Query('search') search?: string,
+    @Req() req?: any,
   ) {
+    const admin = req?.user;
     return await this.leadService.getAllLeads({
       status,
       source,
       assignedAdminId: assignedAdminId ? parseInt(String(assignedAdminId)) : undefined,
       search,
-    });
+    }, admin);
   }
 
   // Получить лид по ID
@@ -74,13 +77,15 @@ export class LeadController {
     @Req() req?: any,
   ) {
     const adminId = req?.user?.id;
-    return await this.leadService.updateLead(id, updateLeadDto, adminId);
+    const admin = req?.user;
+    return await this.leadService.updateLead(id, updateLeadDto, adminId, admin);
   }
 
   // Удалить лид
   @Delete(':id')
-  async deleteLead(@Param('id', ParseIntPipe) id: number) {
-    await this.leadService.deleteLead(id);
+  async deleteLead(@Param('id', ParseIntPipe) id: number, @Req() req?: any) {
+    const admin = req?.user;
+    await this.leadService.deleteLead(id, admin);
     return { success: true };
   }
 
