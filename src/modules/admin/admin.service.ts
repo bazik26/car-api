@@ -34,6 +34,10 @@ export class AdminService {
     await this.adminRepo.softDelete(adminId);
   }
 
+  async restoreAdmin(adminId: number) {
+    await this.adminRepo.restore({ id: adminId });
+  }
+
   async updateAdmin(id: number, adminData: Partial<AdminEntity>) {
     if (adminData.password) {
       adminData.password = await bcrypt.hash(adminData.password, 10);
@@ -41,3 +45,4 @@ export class AdminService {
     await this.adminRepo.update(id, adminData);
     return await this.getAdmin(id);
   }
+}
