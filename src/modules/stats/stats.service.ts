@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CarEntity } from '../../db/car.entity';
 import { AdminEntity } from '../../db/admin.entity';
+import { LeadEntity } from '../lead/lead.entity';
 
 @Injectable()
 export class StatsService {
@@ -11,6 +12,8 @@ export class StatsService {
     private readonly carRepository: Repository<CarEntity>,
     @InjectRepository(AdminEntity)
     private readonly adminRepository: Repository<AdminEntity>,
+    @InjectRepository(LeadEntity)
+    private readonly leadRepository: Repository<LeadEntity>,
   ) {}
 
   async getProductivityStats() {
@@ -82,6 +85,41 @@ export class StatsService {
     const errorsCount = Math.floor(Math.random() * 10);
     const productivityScore = carsAdded > 0 ? Math.min(100, (soldCars / carsAdded) * 100) : 0;
 
+    // Получаем статистику по лидам
+    const totalLeads = await this.leadRepository.count({ where: { assignedAdminId: adminId } });
+    const openLeads = await this.leadRepository.count({ 
+      where: { 
+        assignedAdminId: adminId,
+        status: 'new' 
+      } 
+    });
+    const inProgressLeads = await this.leadRepository.count({ 
+      where: { 
+        assignedAdminId: adminId,
+        status: 'in_progress' 
+      } 
+    });
+    const closedLeads = await this.leadRepository.count({ 
+      where: { 
+        assignedAdminId: adminId,
+        status: 'closed' 
+      } 
+    });
+    const lostLeads = await this.leadRepository.count({ 
+      where: { 
+        assignedAdminId: adminId,
+        status: 'lost' 
+      } 
+    });
+
+    // Получаем последние операции (последние 10 лидов)
+    const recentLeads = await this.leadRepository.find({
+      where: { assignedAdminId: adminId },
+      order: { updatedAt: 'DESC' },
+      take: 10,
+      relations: ['assignedAdmin'],
+    });
+
     return {
       id: admin.id,
       name: admin.email, // Используем email как имя
@@ -92,6 +130,21 @@ export class StatsService {
       productivityScore: Math.round(productivityScore),
       lastActivity: admin.updatedAt,
       isActive: !admin.deletedAt, // Активен если не удален
+      leads: {
+        total: totalLeads,
+        open: openLeads,
+        inProgress: inProgressLeads,
+        closed: closedLeads,
+        lost: lostLeads,
+      },
+      recentLeads: recentLeads.map(lead => ({
+        id: lead.id,
+        name: lead.name,
+        status: lead.status,
+        priority: lead.priority,
+        score: lead.score,
+        updatedAt: lead.updatedAt,
+      })),
     };
   }
 

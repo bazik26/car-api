@@ -16,6 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { LeadService, CreateLeadDto, UpdateLeadDto, CreateLeadCommentDto } from './lead.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { Public } from '../auth/public.decorator';
 import { LeadStatus, LeadSource } from './lead.entity';
 import { MeetingType } from './lead-meeting.entity';
 
@@ -114,6 +115,14 @@ export class LeadController {
   @Get('stats/summary')
   async getLeadsStats() {
     return await this.leadService.getLeadsStats();
+  }
+
+  // Получить количество необработанных лидов
+  @Get('stats/unprocessed-count')
+  @Public()
+  async getUnprocessedLeadsCount() {
+    const count = await this.leadService.getUnprocessedLeadsCount();
+    return { count };
   }
 
   // ==================== ACTIVITY LOG ====================
