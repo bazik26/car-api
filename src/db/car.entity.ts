@@ -8,7 +8,8 @@ import {
   OneToMany,
   ManyToOne,
 } from 'typeorm';
-import { AdminEntity, ProjectType } from './admin.entity';
+import { AdminEntity } from './admin.entity';
+import { ProjectType } from './project-type';
 
 import { FileEntity } from './file.entity';
 

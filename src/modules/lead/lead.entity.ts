@@ -9,7 +9,8 @@ import {
   ManyToMany,
   JoinColumn,
 } from 'typeorm';
-import { AdminEntity, ProjectType } from '../../db/admin.entity';
+import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 import { LeadActivityEntity } from './lead-activity.entity';
 import { LeadTaskEntity } from './lead-task.entity';
 import { LeadTagEntity } from './lead-tag.entity';

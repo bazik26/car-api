@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessageEntity, ChatSessionEntity } from './chat.entity';
 import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 import { UserEntity } from '../../db/user.entity';
 import { LeadService } from '../lead/lead.service';
 import { LeadSource } from '../lead/lead.entity';
@@ -28,6 +29,7 @@ export interface ChatSession {
   clientEmail?: string;
   clientPhone?: string;
   projectSource: string;
+  projectId?: ProjectType;
   isActive?: boolean;
   assignedAdminId?: number;
   lastMessageAt?: Date;
@@ -100,6 +102,7 @@ export class ChatService {
   // Создать новую сессию чата
   async createSession(sessionData: Partial<ChatSession> & {
     userFingerprint?: string;
+    projectId?: ProjectType;
     userData?: {
       name?: string;
       email?: string;
@@ -117,8 +120,23 @@ export class ChatService {
         user = await this.createOrFindUser(sessionData.userFingerprint, sessionData.userData);
       }
 
+      // Определяем projectId на основе projectSource, если не указан
+      let projectId = sessionData.projectId;
+      if (!projectId && sessionData.projectSource) {
+        // Маппинг projectSource на projectId
+        const projectSourceMap: Record<string, ProjectType> = {
+          'car-client': ProjectType.OFFICE_1,
+          'car-client-2': ProjectType.OFFICE_1,
+          'car-market': ProjectType.OFFICE_1,
+          'car-client-old': ProjectType.OFFICE_1,
+          'car-market-client': ProjectType.OFFICE_1,
+        };
+        projectId = projectSourceMap[sessionData.projectSource] || ProjectType.OFFICE_1;
+      }
+
       const session = this.chatSessionRepository.create({
         ...sessionData,
+        projectId: projectId || ProjectType.OFFICE_1,
         userId: user?.id
       });
       const savedSession = await this.chatSessionRepository.save(session);

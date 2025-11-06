@@ -127,3 +127,4 @@ CREATE INDEX IF NOT EXISTS `IDX_leads_score` ON `leads` (`score`);
 CREATE INDEX IF NOT EXISTS `IDX_leads_convertedToClient` ON `leads` (`convertedToClient`);
 CREATE INDEX IF NOT EXISTS `IDX_leads_nextFollowUpDate` ON `leads` (`nextFollowUpDate`);
 
+

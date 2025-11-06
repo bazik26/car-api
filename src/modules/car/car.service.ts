@@ -7,7 +7,8 @@ import { Repository } from 'typeorm';
 
 import { CarSearchDTO } from '../../dtos/car.dto';
 
-import { AdminEntity, ProjectType } from '../../db/admin.entity';
+import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 import { CarEntity } from '../../db/car.entity';
 import { FileEntity } from '../../db/file.entity';
 

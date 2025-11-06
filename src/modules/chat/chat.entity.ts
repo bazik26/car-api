@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 import { UserEntity } from '../../db/user.entity';
 
 @Entity('chat_messages')
@@ -64,6 +73,9 @@ export class ChatSessionEntity {
 
   @Column({ type: 'varchar', length: 255 })
   projectSource: string;
+
+  @Column({ type: 'enum', enum: ProjectType, nullable: true, default: ProjectType.OFFICE_1 })
+  projectId: ProjectType;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

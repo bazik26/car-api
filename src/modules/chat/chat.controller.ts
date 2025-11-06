@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nest
 import { ChatService, ChatMessage, ChatSession } from './chat.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { Public } from '../auth/public.decorator';
+import { ProjectType } from '../../db/project-type';
 
 @Controller('chat')
 export class ChatController {
@@ -12,6 +13,7 @@ export class ChatController {
   @Post('session')
   async createSession(@Body() sessionData: Partial<ChatSession> & {
     userFingerprint?: string;
+    projectId?: ProjectType;
     userData?: {
       name?: string;
       email?: string;

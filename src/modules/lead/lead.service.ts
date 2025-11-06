@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { LeadEntity, LeadCommentEntity, LeadSource, LeadStatus, LeadPriority } from './lead.entity';
-import { AdminEntity, ProjectType } from '../../db/admin.entity';
+import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 import { ChatSessionEntity } from '../chat/chat.entity';
 import { LeadActivityEntity, ActivityType } from './lead-activity.entity';
 import { LeadTaskEntity } from './lead-task.entity';
@@ -121,7 +122,7 @@ export class LeadService {
       priority: LeadPriority.NORMAL,
       chatSessionId: session.sessionId,
       assignedAdminId: assignedAdminId || session.assignedAdminId || undefined,
-      projectId: ProjectType.OFFICE_1, // По умолчанию первый офис (все сайты car-client, car-client-2, car-market, car-client-old)
+      projectId: session.projectId || ProjectType.OFFICE_1, // Используем projectId из сессии или дефолт
     });
 
     return await this.leadRepository.save(lead);
