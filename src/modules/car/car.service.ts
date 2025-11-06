@@ -200,8 +200,20 @@ export class CarService {
   }
 
   async getCarsAll() {
+    const where: any = {};
+    
+    // Для не-суперадминов фильтруем по projectId админа
+    if (!this.admin.isSuper) {
+      // Фильтруем по projectId текущего админа
+      if (this.admin.projectId) {
+        where.projectId = this.admin.projectId;
+      }
+      // Также фильтруем по adminId для обратной совместимости
+      where.adminId = this.admin.id;
+    }
+    
     return await this.carRepo.find({
-      ...(this.admin.isSuper ? {} : { adminId: this.admin.id }),
+      where,
       withDeleted: true,
       relations: ['files'],
       order: {

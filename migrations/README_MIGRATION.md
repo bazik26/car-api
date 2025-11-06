@@ -57,3 +57,4 @@ mysql -h YOUR_HOST -u YOUR_USER -p YOUR_DATABASE < car-api/migrations/add_admin_
 2. Проверьте, что API возвращает `projectId` и `permissions` в ответе
 3. Убедитесь, что миграция выполнена успешно
 
+

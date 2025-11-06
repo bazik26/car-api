@@ -128,3 +128,4 @@ CREATE INDEX IF NOT EXISTS `IDX_leads_convertedToClient` ON `leads` (`convertedT
 CREATE INDEX IF NOT EXISTS `IDX_leads_nextFollowUpDate` ON `leads` (`nextFollowUpDate`);
 
 
+
