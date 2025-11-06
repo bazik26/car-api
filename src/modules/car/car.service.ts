@@ -228,10 +228,8 @@ export class CarService {
 
   async createCar(car: CarEntity) {
     car.admin = this.admin;
-    // Устанавливаем projectId на основе админа, если не указан
-    if (!car.projectId) {
-      car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
-    }
+    // Всегда устанавливаем projectId на основе админа (безопасность)
+    car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
 
     return await this.carRepo.save(car);
   }
@@ -245,6 +243,21 @@ export class CarService {
   }
 
   async updateCar(carId: number, updateData: Partial<CarEntity>) {
+    // Проверяем, что админ может редактировать эту машину
+    const car = await this.carRepo.findOne({ where: { id: carId } });
+    if (!car) {
+      throw new Error('Автомобиль не найден');
+    }
+    
+    // Для не-суперадминов проверяем, что машина принадлежит их офису
+    if (!this.admin.isSuper) {
+      if (car.projectId !== this.admin.projectId) {
+        throw new Error('Нет доступа к редактированию этой машины');
+      }
+      // Всегда устанавливаем projectId на основе админа (безопасность)
+      updateData.projectId = this.admin.projectId || ProjectType.OFFICE_1;
+    }
+    
     await this.carRepo.update(carId, updateData);
 
     return await this.getCar(carId);
@@ -272,18 +285,65 @@ export class CarService {
   }
 
   async deleteCar(carId: number) {
+    // Проверяем, что админ может удалить эту машину
+    if (!this.admin.isSuper) {
+      const car = await this.carRepo.findOne({ where: { id: carId } });
+      if (!car) {
+        throw new Error('Автомобиль не найден');
+      }
+      if (car.projectId !== this.admin.projectId) {
+        throw new Error('Нет доступа к удалению этой машины');
+      }
+    }
+    
     await this.carRepo.softDelete(carId);
   }
 
   async restoreCar(carId: number) {
+    // Проверяем, что админ может восстановить эту машину
+    if (!this.admin.isSuper) {
+      const car = await this.carRepo.findOne({ 
+        where: { id: carId },
+        withDeleted: true 
+      });
+      if (!car) {
+        throw new Error('Автомобиль не найден');
+      }
+      if (car.projectId !== this.admin.projectId) {
+        throw new Error('Нет доступа к восстановлению этой машины');
+      }
+    }
+    
     await this.carRepo.restore({ id: carId });
   }
 
   async markCarAsSold(carId: number) {
+    // Проверяем, что админ может изменить статус этой машины
+    if (!this.admin.isSuper) {
+      const car = await this.carRepo.findOne({ where: { id: carId } });
+      if (!car) {
+        throw new Error('Автомобиль не найден');
+      }
+      if (car.projectId !== this.admin.projectId) {
+        throw new Error('Нет доступа к изменению статуса этой машины');
+      }
+    }
+    
     await this.carRepo.update(carId, { isSold: true });
   }
 
   async markCarAsAvailable(carId: number) {
+    // Проверяем, что админ может изменить статус этой машины
+    if (!this.admin.isSuper) {
+      const car = await this.carRepo.findOne({ where: { id: carId } });
+      if (!car) {
+        throw new Error('Автомобиль не найден');
+      }
+      if (car.projectId !== this.admin.projectId) {
+        throw new Error('Нет доступа к изменению статуса этой машины');
+      }
+    }
+    
     await this.carRepo.update(carId, { isSold: false });
   }
 
