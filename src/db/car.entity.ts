@@ -8,7 +8,7 @@ import {
   OneToMany,
   ManyToOne,
 } from 'typeorm';
-import { AdminEntity } from './admin.entity';
+import { AdminEntity, ProjectType } from './admin.entity';
 
 import { FileEntity } from './file.entity';
 
@@ -63,6 +63,9 @@ export class CarEntity {
 
   @Column({ type: 'boolean', default: false })
   promoSold: boolean;
+
+  @Column({ type: 'enum', enum: ProjectType, nullable: true, default: ProjectType.OFFICE_1 })
+  projectId: ProjectType;
 
   @Column({ type: 'text', nullable: true })
   description: string;

@@ -9,7 +9,7 @@ import {
   ManyToMany,
   JoinColumn,
 } from 'typeorm';
-import { AdminEntity } from '../../db/admin.entity';
+import { AdminEntity, ProjectType } from '../../db/admin.entity';
 import { LeadActivityEntity } from './lead-activity.entity';
 import { LeadTaskEntity } from './lead-task.entity';
 import { LeadTagEntity } from './lead-tag.entity';
@@ -90,6 +90,9 @@ export class LeadEntity {
   @ManyToOne(() => AdminEntity, { nullable: true })
   @JoinColumn({ name: 'assignedAdminId' })
   assignedAdmin: AdminEntity;
+
+  @Column({ type: 'enum', enum: ProjectType, nullable: true, default: ProjectType.OFFICE_1 })
+  projectId: ProjectType;
 
   @Column({ type: 'text', nullable: true })
   description: string;

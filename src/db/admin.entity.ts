@@ -38,7 +38,7 @@ export class AdminEntity {
   @Column({ type: 'boolean', default: false })
   isSuper!: boolean;
 
-  @Column({ type: 'enum', enum: ProjectType, nullable: true })
+  @Column({ type: 'enum', enum: ProjectType, nullable: true, default: ProjectType.OFFICE_1 })
   projectId?: ProjectType;
 
   @Column({ type: 'json', nullable: true })

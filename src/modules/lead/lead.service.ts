@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { LeadEntity, LeadCommentEntity, LeadSource, LeadStatus, LeadPriority } from './lead.entity';
-import { AdminEntity } from '../../db/admin.entity';
+import { AdminEntity, ProjectType } from '../../db/admin.entity';
 import { ChatSessionEntity } from '../chat/chat.entity';
 import { LeadActivityEntity, ActivityType } from './lead-activity.entity';
 import { LeadTaskEntity } from './lead-task.entity';
@@ -68,7 +68,10 @@ export class LeadService {
 
   // Создать лид
   async createLead(createLeadDto: CreateLeadDto, adminId?: number): Promise<LeadEntity> {
-    const lead = this.leadRepository.create(createLeadDto);
+    const lead = this.leadRepository.create({
+      ...createLeadDto,
+      projectId: ProjectType.OFFICE_1, // По умолчанию первый офис
+    });
     const savedLead = await this.leadRepository.save(lead);
 
     // Создаем активность
@@ -118,6 +121,7 @@ export class LeadService {
       priority: LeadPriority.NORMAL,
       chatSessionId: session.sessionId,
       assignedAdminId: assignedAdminId || session.assignedAdminId || undefined,
+      projectId: ProjectType.OFFICE_1, // По умолчанию первый офис (все сайты car-client, car-client-2, car-market, car-client-old)
     });
 
     return await this.leadRepository.save(lead);

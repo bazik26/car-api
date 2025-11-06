@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 
 import { CarSearchDTO } from '../../dtos/car.dto';
 
-import { AdminEntity } from '../../db/admin.entity';
+import { AdminEntity, ProjectType } from '../../db/admin.entity';
 import { CarEntity } from '../../db/car.entity';
 import { FileEntity } from '../../db/file.entity';
 
@@ -215,6 +215,10 @@ export class CarService {
 
   async createCar(car: CarEntity) {
     car.admin = this.admin;
+    // Устанавливаем projectId на основе админа, если не указан
+    if (!car.projectId) {
+      car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
+    }
 
     return await this.carRepo.save(car);
   }
