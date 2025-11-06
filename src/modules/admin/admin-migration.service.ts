@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AdminEntity } from '../db/admin.entity';
-import { ProjectType } from '../db/project-type';
+import { AdminEntity } from '../../db/admin.entity';
+import { ProjectType } from '../../db/project-type';
 
 @Injectable()
 export class AdminMigrationService implements OnModuleInit {
