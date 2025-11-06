@@ -74,7 +74,7 @@ export class LeadService {
     // Устанавливаем projectId и projectSource на основе админа
     const projectId = admin?.projectId || ProjectType.OFFICE_1;
     // projectSource может быть передан явно (например, из чата) или берется из админа
-    const projectSource = createLeadDto.projectSource || (admin?.projectId === ProjectType.OFFICE_1 ? 'office_1' : admin?.projectId === ProjectType.OFFICE_1 ? 'office_2' : 'manual');
+    const projectSource = createLeadDto.projectSource || (admin?.projectId === ProjectType.OFFICE_1 ? 'office_1' : admin?.projectId === ProjectType.OFFICE_2 ? 'office_2' : 'manual');
     
     const lead = this.leadRepository.create({
       ...createLeadDto,
