@@ -33,6 +33,14 @@ export class AdminEntity {
   @Column({ type: 'json', nullable: true })
   permissions?: AdminPermissions;
 
+  @Column({ type: 'json', nullable: true })
+  workingDays?: Array<{
+    day: number; // 0-6 (воскресенье-суббота)
+    startTime: string; // "09:00"
+    endTime: string; // "18:00"
+    enabled: boolean;
+  }>;
+
   @CreateDateColumn()
   readonly createdAt!: Date;
 
