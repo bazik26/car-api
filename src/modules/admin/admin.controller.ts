@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 
 import { Public } from '../auth/public.decorator';
 
@@ -21,6 +21,11 @@ export class AdminController {
   @Get('/admin/:adminId')
   async getAdmin(@Param('adminId') adminId: number) {
     return await this.adminService.getAdmin(adminId);
+  }
+
+  @Put('/admin/:adminId')
+  async updateAdmin(@Param('adminId') adminId: number, @Body() adminData: any) {
+    return await this.adminService.updateAdmin(adminId, adminData);
   }
 
   @Delete('/admin/:adminId')

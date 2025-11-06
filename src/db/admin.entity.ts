@@ -10,6 +10,18 @@ import {
 
 import { CarEntity } from './car.entity';
 
+export enum ProjectType {
+  OFFICE_1 = 'office_1',
+  OFFICE_2 = 'office_2',
+}
+
+export interface AdminPermissions {
+  canAddCars: boolean;
+  canViewCars: boolean;
+  canManageLeads: boolean; // включает редактирование
+  canViewLeads: boolean; // только просмотр, без редактирования
+}
+
 @Entity({
   name: 'admins',
 })
@@ -25,6 +37,12 @@ export class AdminEntity {
 
   @Column({ type: 'boolean', default: false })
   isSuper!: boolean;
+
+  @Column({ type: 'enum', enum: ProjectType, nullable: true })
+  projectId?: ProjectType;
+
+  @Column({ type: 'json', nullable: true })
+  permissions?: AdminPermissions;
 
   @CreateDateColumn()
   readonly createdAt!: Date;
