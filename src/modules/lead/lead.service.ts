@@ -6,7 +6,7 @@ import { AdminEntity } from '../../db/admin.entity';
 import { ProjectType } from '../../db/project-type';
 import { ChatSessionEntity } from '../chat/chat.entity';
 import { LeadActivityEntity, ActivityType } from './lead-activity.entity';
-import { LeadTaskEntity } from './lead-task.entity';
+import { LeadTaskEntity, TaskType, TaskStatus } from './lead-task.entity';
 import { LeadTagEntity } from './lead-tag.entity';
 import { LeadAttachmentEntity } from './lead-attachment.entity';
 import { LeadMeetingEntity, MeetingType } from './lead-meeting.entity';
@@ -74,7 +74,7 @@ export class LeadService {
     // Устанавливаем projectId и projectSource на основе админа
     const projectId = admin?.projectId || ProjectType.OFFICE_1;
     // projectSource может быть передан явно (например, из чата) или берется из админа
-    const projectSource = createLeadDto.projectSource || (admin?.projectId === ProjectType.OFFICE_1 ? 'office_1' : admin?.projectId === ProjectType.OFFICE_2 ? 'office_2' : 'manual');
+    const projectSource = createLeadDto.projectSource || (admin?.projectId === ProjectType.OFFICE_1 ? 'office_1' : admin?.projectId === ProjectType.OFFICE_1 ? 'office_2' : 'manual');
     
     const lead = this.leadRepository.create({
       ...createLeadDto,
@@ -92,6 +92,9 @@ export class LeadService {
         description: 'Лид создан',
       });
     }
+
+    // Автоматически создаем задачи для обработки лида
+    await this.createDefaultTasksForLead(savedLead.id, savedLead.assignedAdminId || adminId);
 
     // Рассчитываем score
     await this.calculateLeadScore(savedLead.id);
@@ -134,7 +137,12 @@ export class LeadService {
       projectSource: session.projectSource || 'chat', // Используем projectSource из сессии
     });
 
-    return await this.leadRepository.save(lead);
+    const savedLead = await this.leadRepository.save(lead);
+
+    // Автоматически создаем задачи для обработки лида
+    await this.createDefaultTasksForLead(savedLead.id, savedLead.assignedAdminId || assignedAdminId);
+
+    return savedLead;
   }
 
   // Получить все лиды
@@ -404,14 +412,113 @@ export class LeadService {
 
   // ==================== TASKS ====================
 
+  // Автоматически создаем задачи для обработки нового лида
+  async createDefaultTasksForLead(leadId: number, adminId?: number): Promise<void> {
+    if (!adminId) {
+      // Если админ не назначен, не создаем задачи
+      return;
+    }
+
+    const lead = await this.getLeadById(leadId);
+    if (!lead) {
+      return;
+    }
+
+    // Определяем дедлайн для задач (через 24 часа)
+    const dueDate = new Date();
+    dueDate.setHours(dueDate.getHours() + 24);
+
+    // Список задач для создания
+    const defaultTasks = [
+      {
+        leadId,
+        adminId,
+        title: 'Связаться с клиентом',
+        description: 'Связаться с клиентом по телефону, email или Telegram',
+        taskType: TaskType.CONTACT,
+        status: TaskStatus.PENDING,
+        dueDate,
+        taskData: {
+          contactMethod: null,
+          contactResult: null,
+        },
+      },
+      {
+        leadId,
+        adminId,
+        title: 'Оформить лида',
+        description: 'Заполнить основную информацию о лиде',
+        taskType: TaskType.REGISTER_LEAD,
+        status: TaskStatus.PENDING,
+        dueDate,
+        taskData: {},
+      },
+      {
+        leadId,
+        adminId,
+        title: 'Узнать желаемую выборку по машинам',
+        description: 'Выяснить предпочтения клиента по марке, модели, году выпуска, пробегу',
+        taskType: TaskType.CAR_PREFERENCES,
+        status: TaskStatus.PENDING,
+        dueDate,
+        taskData: {
+          preferredBrands: [],
+          preferredModels: [],
+          preferredYearFrom: null,
+          preferredYearTo: null,
+          preferredMileageMax: null,
+        },
+      },
+      {
+        leadId,
+        adminId,
+        title: 'Узнать регион',
+        description: 'Выяснить регион и город клиента',
+        taskType: TaskType.REGION,
+        status: TaskStatus.PENDING,
+        dueDate,
+        taskData: {
+          region: null,
+          city: null,
+        },
+      },
+      {
+        leadId,
+        adminId,
+        title: 'Узнать бюджет',
+        description: 'Выяснить бюджет клиента на покупку автомобиля',
+        taskType: TaskType.BUDGET,
+        status: TaskStatus.PENDING,
+        dueDate,
+        taskData: {
+          budgetMin: null,
+          budgetMax: null,
+          currency: 'RUB',
+        },
+      },
+    ];
+
+    // Создаем задачи последовательно
+    for (const taskData of defaultTasks) {
+      await this.createTask(taskData);
+    }
+  }
+
   async createTask(data: {
     leadId: number;
     adminId: number;
     title: string;
     description?: string;
+    taskType?: TaskType;
+    status?: TaskStatus;
     dueDate?: Date;
+    taskData?: any;
   }): Promise<LeadTaskEntity> {
-    const task = this.leadTaskRepository.create(data);
+    const task = this.leadTaskRepository.create({
+      ...data,
+      taskType: data.taskType || TaskType.ADDITIONAL_INFO,
+      status: data.status || TaskStatus.PENDING,
+    });
     const savedTask = await this.leadTaskRepository.save(task);
 
     // Создаем активность
@@ -438,8 +545,11 @@ export class LeadService {
     data: {
       title?: string;
       description?: string;
+      taskType?: TaskType;
+      status?: TaskStatus;
       dueDate?: Date;
       completed?: boolean;
+      taskData?: any;
     },
     adminId?: number,
   ): Promise<LeadTaskEntity> {
@@ -454,6 +564,7 @@ export class LeadService {
 
     if (data.completed !== undefined && data.completed && !task.completed) {
       task.completedAt = new Date();
+      task.status = TaskStatus.COMPLETED;
       if (adminId) {
         await this.createActivity({
           leadId: task.leadId,
@@ -462,10 +573,48 @@ export class LeadService {
           description: `Задача выполнена: ${task.title}`,
         });
       }
+    } else if (data.status === TaskStatus.IN_PROGRESS && task.status === TaskStatus.PENDING) {
+      if (adminId) {
+        await this.createActivity({
+          leadId: task.leadId,
+          adminId,
+          activityType: ActivityType.UPDATED,
+          description: `Задача начата: ${task.title}`,
+        });
+      }
     }
 
     Object.assign(task, data);
     return await this.leadTaskRepository.save(task);
+  }
+
+  // Получить все задачи админа
+  async getAdminTasks(adminId: number, filters?: {
+    status?: TaskStatus;
+    completed?: boolean;
+    leadId?: number;
+  }): Promise<LeadTaskEntity[]> {
+    const queryBuilder = this.leadTaskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.lead', 'lead')
+      .leftJoinAndSelect('task.admin', 'admin')
+      .where('task.adminId = :adminId', { adminId })
+      .orderBy('task.dueDate', 'ASC')
+      .addOrderBy('task.createdAt', 'DESC');
+
+    if (filters?.status) {
+      queryBuilder.andWhere('task.status = :status', { status: filters.status });
+    }
+
+    if (filters?.completed !== undefined) {
+      queryBuilder.andWhere('task.completed = :completed', { completed: filters.completed });
+    }
+
+    if (filters?.leadId) {
+      queryBuilder.andWhere('task.leadId = :leadId', { leadId: filters.leadId });
+    }
+
+    return await queryBuilder.getMany();
   }
 
   async deleteTask(taskId: number): Promise<void> {

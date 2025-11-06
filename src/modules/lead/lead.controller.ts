@@ -140,17 +140,47 @@ export class LeadController {
 
   // ==================== TASKS ====================
 
+  // Получить задачи админа
+  @Get('tasks/my')
+  async getAdminTasks(
+    @Query('status') status?: string,
+    @Query('completed') completed?: string,
+    @Query('leadId') leadId?: number,
+    @Req() req?: any,
+  ) {
+    const adminId = req?.user?.id;
+    if (!adminId) {
+      return [];
+    }
+    return await this.leadService.getAdminTasks(adminId, {
+      status: status as any,
+      completed: completed === 'true' ? true : completed === 'false' ? false : undefined,
+      leadId: leadId ? parseInt(String(leadId)) : undefined,
+    });
+  }
+
   @Post(':id/tasks')
   async createTask(
     @Param('id', ParseIntPipe) leadId: number,
-    @Body() body: { adminId: number; title: string; description?: string; dueDate?: string },
+    @Body() body: {
+      adminId: number;
+      title: string;
+      description?: string;
+      taskType?: string;
+      status?: string;
+      dueDate?: string;
+      taskData?: any;
+    },
   ) {
     return await this.leadService.createTask({
       leadId,
       adminId: body.adminId,
       title: body.title,
       description: body.description,
+      taskType: body.taskType as any,
+      status: body.status as any,
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
+      taskData: body.taskData,
     });
   }
 
@@ -162,7 +192,15 @@ export class LeadController {
   @Put('tasks/:taskId')
   async updateTask(
     @Param('taskId', ParseIntPipe) taskId: number,
-    @Body() body: { title?: string; description?: string; dueDate?: string; completed?: boolean },
+    @Body() body: {
+      title?: string;
+      description?: string;
+      taskType?: string;
+      status?: string;
+      dueDate?: string;
+      completed?: boolean;
+      taskData?: any;
+    },
     @Req() req?: any,
   ) {
     const adminId = req?.user?.id;
@@ -170,6 +208,8 @@ export class LeadController {
       taskId,
       {
         ...body,
+        taskType: body.taskType as any,
+        status: body.status as any,
         dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
       },
       adminId,
