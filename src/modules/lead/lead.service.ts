@@ -163,8 +163,10 @@ export class LeadService {
       .orderBy('lead.createdAt', 'DESC');
 
     // Для не-суперадминов фильтруем по projectId
-    if (admin && !admin.isSuper && admin.projectId) {
-      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: admin.projectId });
+    if (admin && !admin.isSuper) {
+      // Используем projectId админа или дефолтное значение
+      const adminProjectId = admin.projectId || ProjectType.OFFICE_1;
+      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: adminProjectId });
     }
 
     if (filters?.status) {
@@ -380,8 +382,10 @@ export class LeadService {
       });
 
     // Для не-суперадминов фильтруем по projectId
-    if (admin && !admin.isSuper && admin.projectId) {
-      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: admin.projectId });
+    if (admin && !admin.isSuper) {
+      // Используем projectId админа или дефолтное значение
+      const adminProjectId = admin.projectId || ProjectType.OFFICE_1;
+      queryBuilder.andWhere('lead.projectId = :projectId', { projectId: adminProjectId });
     }
 
     return await queryBuilder.getCount();

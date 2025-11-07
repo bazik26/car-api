@@ -204,10 +204,9 @@ export class CarService {
     
     // Для не-суперадминов фильтруем по projectId админа
     if (this.admin && !this.admin.isSuper) {
-      // Фильтруем по projectId текущего админа
-      if (this.admin.projectId) {
-        where.projectId = this.admin.projectId;
-      }
+      // Фильтруем по projectId текущего админа (или дефолтному значению)
+      const adminProjectId = this.admin.projectId || ProjectType.OFFICE_1;
+      where.projectId = adminProjectId;
       // Также фильтруем по adminId для обратной совместимости
       where.adminId = this.admin.id;
     }
