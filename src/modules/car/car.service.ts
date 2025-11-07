@@ -200,19 +200,27 @@ export class CarService {
   }
 
   async getCarsAll() {
-    const where: any = {};
-    
     // Для не-суперадминов фильтруем по projectId админа
     if (this.admin && !this.admin.isSuper) {
-      // Фильтруем по projectId текущего админа (или дефолтному значению)
       const adminProjectId = this.admin.projectId || ProjectType.OFFICE_1;
-      where.projectId = adminProjectId;
-      // Также фильтруем по adminId для обратной совместимости
-      where.adminId = this.admin.id;
+      
+      // Используем QueryBuilder для более гибкой фильтрации
+      // Показываем машины с projectId = adminProjectId ИЛИ (projectId IS NULL И adminId = this.admin.id)
+      // Это обеспечивает обратную совместимость с машинами, у которых projectId еще не установлен
+      return await this.carRepo
+        .createQueryBuilder('car')
+        .leftJoinAndSelect('car.files', 'files')
+        .where('car.projectId = :projectId', { projectId: adminProjectId })
+        .orWhere('(car.projectId IS NULL AND car.adminId = :adminId)', { adminId: this.admin.id })
+        .orderBy('car.deletedAt', 'ASC')
+        .addOrderBy('car.id', 'DESC')
+        .addOrderBy('files.id', 'ASC')
+        .withDeleted()
+        .getMany();
     }
     
+    // Для суперадминов показываем все машины
     return await this.carRepo.find({
-      where,
       withDeleted: true,
       relations: ['files'],
       order: {
