@@ -203,7 +203,7 @@ export class CarService {
     const where: any = {};
     
     // Для не-суперадминов фильтруем по projectId админа
-    if (!this.admin.isSuper) {
+    if (this.admin && !this.admin.isSuper) {
       // Фильтруем по projectId текущего админа
       if (this.admin.projectId) {
         where.projectId = this.admin.projectId;
@@ -227,6 +227,9 @@ export class CarService {
   }
 
   async createCar(car: CarEntity) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
     car.admin = this.admin;
     // Всегда устанавливаем projectId на основе админа (безопасность)
     car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
@@ -243,6 +246,10 @@ export class CarService {
   }
 
   async updateCar(carId: number, updateData: Partial<CarEntity>) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
+    
     // Проверяем, что админ может редактировать эту машину
     const car = await this.carRepo.findOne({ where: { id: carId } });
     if (!car) {
