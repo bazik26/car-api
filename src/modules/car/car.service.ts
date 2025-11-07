@@ -292,6 +292,10 @@ export class CarService {
   }
 
   async deleteCar(carId: number) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
+    
     // Проверяем, что админ может удалить эту машину
     if (!this.admin.isSuper) {
       const car = await this.carRepo.findOne({ where: { id: carId } });
@@ -307,6 +311,10 @@ export class CarService {
   }
 
   async restoreCar(carId: number) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
+    
     // Проверяем, что админ может восстановить эту машину
     if (!this.admin.isSuper) {
       const car = await this.carRepo.findOne({ 
@@ -325,6 +333,10 @@ export class CarService {
   }
 
   async markCarAsSold(carId: number) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
+    
     // Проверяем, что админ может изменить статус этой машины
     if (!this.admin.isSuper) {
       const car = await this.carRepo.findOne({ where: { id: carId } });
@@ -340,6 +352,10 @@ export class CarService {
   }
 
   async markCarAsAvailable(carId: number) {
+    if (!this.admin) {
+      throw new Error('Админ не авторизован');
+    }
+    
     // Проверяем, что админ может изменить статус этой машины
     if (!this.admin.isSuper) {
       const car = await this.carRepo.findOne({ where: { id: carId } });
