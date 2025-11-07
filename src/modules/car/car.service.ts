@@ -204,10 +204,12 @@ export class CarService {
     if (this.admin && !this.admin.isSuper) {
       const adminProjectId = this.admin.projectId || ProjectType.OFFICE_1;
       
+      console.log(`CarService.getCarsAll: Admin ${this.admin.id} (${this.admin.email}), projectId: ${adminProjectId}`);
+      
       // Используем QueryBuilder для более гибкой фильтрации
       // Показываем машины с projectId = adminProjectId ИЛИ (projectId IS NULL И adminId = this.admin.id)
       // Это обеспечивает обратную совместимость с машинами, у которых projectId еще не установлен
-      return await this.carRepo
+      const cars = await this.carRepo
         .createQueryBuilder('car')
         .leftJoinAndSelect('car.files', 'files')
         .where('car.projectId = :projectId', { projectId: adminProjectId })
@@ -217,10 +219,13 @@ export class CarService {
         .addOrderBy('files.id', 'ASC')
         .withDeleted()
         .getMany();
+      
+      console.log(`CarService.getCarsAll: Found ${cars.length} cars for admin ${this.admin.id}`);
+      return cars;
     }
     
     // Для суперадминов показываем все машины
-    return await this.carRepo.find({
+    const allCars = await this.carRepo.find({
       withDeleted: true,
       relations: ['files'],
       order: {
@@ -231,6 +236,9 @@ export class CarService {
         },
       },
     });
+    
+    console.log(`CarService.getCarsAll: Found ${allCars.length} cars (super admin)`);
+    return allCars;
   }
 
   async createCar(car: CarEntity) {
