@@ -16,6 +16,7 @@ import { LeadTaskEntity } from './lead-task.entity';
 import { LeadTagEntity } from './lead-tag.entity';
 import { LeadAttachmentEntity } from './lead-attachment.entity';
 import { LeadMeetingEntity } from './lead-meeting.entity';
+import { CarEntity } from '../../db/car.entity';
 
 export enum LeadSource {
   CHAT = 'chat',
@@ -38,6 +39,18 @@ export enum LeadPriority {
   NORMAL = 'normal',
   HIGH = 'high',
   URGENT = 'urgent',
+}
+
+export enum PipelineStage {
+  NEW_LEAD = 'new_lead', // 1. Новый лид
+  FIRST_CONTACT = 'first_contact', // 2. Первый контакт (0-2 часа)
+  QUALIFICATION = 'qualification', // 3. Квалификация (2-24 часа)
+  NEEDS_ANALYSIS = 'needs_analysis', // 4. Выявление потребностей (1-3 дня)
+  PRESENTATION = 'presentation', // 5. Презентация (3-7 дней)
+  NEGOTIATION = 'negotiation', // 6. Переговоры (7-14 дней)
+  DEAL_CLOSING = 'deal_closing', // 7. Закрытие сделки (14-30 дней)
+  WON = 'won', // 8. Успешная сделка
+  LOST = 'lost', // 9. Отказ
 }
 
 @Entity('leads')
@@ -133,6 +146,54 @@ export class LeadEntity {
 
   @Column({ type: 'datetime', nullable: true })
   nextFollowUpDate: Date;
+
+  // Новые поля для улучшенной CRM
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: PipelineStage.NEW_LEAD,
+  })
+  pipelineStage: PipelineStage;
+
+  @Column({ type: 'json', nullable: true })
+  budget?: {
+    min: number;
+    max: number;
+    currency: string; // 'RUB' | 'USD' | 'EUR'
+  };
+
+  @Column({ type: 'json', nullable: true })
+  carPreferences?: {
+    brands?: string[];
+    models?: string[];
+    yearFrom?: number;
+    yearTo?: number;
+    maxMileage?: number;
+    bodyType?: string;
+    gearbox?: string;
+    fuel?: string;
+  };
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  city: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  region: string;
+
+  @Column({ type: 'text', nullable: true })
+  timeline: string; // Когда планирует покупку
+
+  @Column({ type: 'text', nullable: true })
+  objections: string; // Возражения клиента
+
+  @Column({ type: 'json', nullable: true })
+  shownCars?: number[]; // ID показанных автомобилей
+
+  @Column({ type: 'int', default: 0 })
+  contactAttempts: number; // Количество попыток связаться
+
+  @Column({ type: 'datetime', nullable: true })
+  lastContactAttemptAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;

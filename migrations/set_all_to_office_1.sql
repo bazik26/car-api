@@ -22,3 +22,5 @@ WHERE `projectId` IS NULL
    OR `projectId` = ''
    OR `projectId` NOT IN ('office_1', 'office_2');
 
+
+

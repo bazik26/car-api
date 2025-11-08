@@ -11,12 +11,38 @@ import { LeadEntity } from './lead.entity';
 import { AdminEntity } from '../../db/admin.entity';
 
 export enum TaskType {
+  // Этап 1: Первый контакт
+  FIRST_CONTACT = 'first_contact', // Первый звонок (0-2 часа)
+  
+  // Этап 2: Квалификация
+  QUALIFICATION = 'qualification', // Квалификация лида (2-24 часа)
+  COLLECT_CONTACTS = 'collect_contacts', // Собрать все контакты
+  
+  // Этап 3: Выявление потребностей
+  CAR_PREFERENCES = 'car_preferences', // Узнать предпочтения по авто
+  BUDGET = 'budget', // Узнать бюджет
+  REGION = 'region', // Узнать регион доставки
+  TIMELINE = 'timeline', // Узнать сроки покупки
+  
+  // Этап 4: Презентация
+  SEND_OFFERS = 'send_offers', // Отправить подборку авто
+  SEND_CALCULATION = 'send_calculation', // Отправить расчет стоимости
+  SEND_PHOTOS = 'send_photos', // Отправить фото/видео авто
+  
+  // Этап 5: Работа с возражениями
+  FOLLOW_UP = 'follow_up', // Повторная связь
+  OBJECTION_HANDLING = 'objection_handling', // Работа с возражениями
+  ADDITIONAL_INFO = 'additional_info', // Доп. информация
+  
+  // Этап 6: Закрытие сделки
+  SCHEDULE_MEETING = 'schedule_meeting', // Назначить встречу
+  SEND_CONTRACT = 'send_contract', // Отправить договор
+  CONFIRM_DEAL = 'confirm_deal', // Подтвердить сделку
+  GET_PREPAYMENT = 'get_prepayment', // Получить предоплату
+  
+  // Старые (для обратной совместимости)
   CONTACT = 'contact', // Связаться с клиентом
   REGISTER_LEAD = 'register_lead', // Оформить лида
-  CAR_PREFERENCES = 'car_preferences', // Узнать желаемую выборку по машинам
-  REGION = 'region', // Регион
-  BUDGET = 'budget', // Бюджет
-  ADDITIONAL_INFO = 'additional_info', // Дополнительная информация
 }
 
 export enum TaskStatus {
