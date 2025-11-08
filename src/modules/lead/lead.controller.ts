@@ -140,7 +140,7 @@ export class LeadController {
 
   // ==================== TASKS ====================
 
-  // Получить задачи админа
+  // Получить задачи админа (УЛУЧШЕНО: супер-админ и Lead Manager видят все)
   @Get('tasks/my')
   async getAdminTasks(
     @Query('status') status?: string,
@@ -149,6 +149,7 @@ export class LeadController {
     @Req() req?: any,
   ) {
     const adminId = req?.user?.id;
+    const admin = req?.user; // Передаем полный объект админа
     if (!adminId) {
       return [];
     }
@@ -156,7 +157,7 @@ export class LeadController {
       status: status as any,
       completed: completed === 'true' ? true : completed === 'false' ? false : undefined,
       leadId: leadId ? parseInt(String(leadId)) : undefined,
-    });
+    }, admin); // Передаем admin для проверки isSuper и isLeadManager
   }
 
   @Post(':id/tasks')

@@ -198,7 +198,7 @@ export class LeadService {
     return savedLead;
   }
 
-  // Получить все лиды
+  // Получить все лиды (УЛУЧШЕНО: поддержка Lead Manager)
   async getAllLeads(
     filters?: {
       status?: LeadStatus;
@@ -215,12 +215,16 @@ export class LeadService {
       .leftJoinAndSelect('comments.admin', 'commentAdmin')
       .orderBy('lead.createdAt', 'DESC');
 
-    // Для не-суперадминов фильтруем по projectId
-    if (admin && !admin.isSuper) {
+    // СУПЕР-АДМИН И LEAD MANAGER видят ВСЕХ лидов
+    const isLeadManager = admin?.permissions?.isLeadManager || false;
+    
+    // Для обычных админов (не супер и не Lead Manager) фильтруем по projectId
+    if (admin && !admin.isSuper && !isLeadManager) {
       // Используем projectId админа или дефолтное значение
       const adminProjectId = admin.projectId || ProjectType.OFFICE_1;
       queryBuilder.andWhere('lead.projectId = :projectId', { projectId: adminProjectId });
     }
+    // Если супер-админ или Lead Manager - показываем всех лидов из всех офисов
 
     if (filters?.status) {
       queryBuilder.andWhere('lead.status = :status', { status: filters.status });
@@ -1236,17 +1240,26 @@ Auto Broker"
     return await this.leadTaskRepository.save(task);
   }
 
-  // Получить все задачи админа
+  // Получить все задачи админа (УЛУЧШЕНО: поддержка супер-админа и Lead Manager)
   async getAdminTasks(adminId: number, filters?: {
     status?: TaskStatus;
     completed?: boolean;
     leadId?: number;
-  }): Promise<LeadTaskEntity[]> {
+  }, admin?: AdminEntity): Promise<LeadTaskEntity[]> {
     const queryBuilder = this.leadTaskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.lead', 'lead')
-      .leftJoinAndSelect('task.admin', 'admin')
-      .where('task.adminId = :adminId', { adminId })
+      .leftJoinAndSelect('task.admin', 'admin');
+
+    // СУПЕР-АДМИН И LEAD MANAGER видят ВСЕ задачи
+    const isLeadManager = admin?.permissions?.isLeadManager || false;
+    if (!admin?.isSuper && !isLeadManager) {
+      // Обычный админ - только свои задачи
+      queryBuilder.where('task.adminId = :adminId', { adminId });
+    }
+    // Если супер-админ или Lead Manager - не фильтруем по adminId (видят всё)
+
+    queryBuilder
       .orderBy('task.dueDate', 'ASC')
       .addOrderBy('task.createdAt', 'DESC');
 

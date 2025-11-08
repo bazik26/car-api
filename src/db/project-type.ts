@@ -4,9 +4,10 @@ export enum ProjectType {
 }
 
 export interface AdminPermissions {
-  canAddCars: boolean;
-  canViewCars: boolean;
-  canManageLeads: boolean; // включает редактирование
-  canViewLeads: boolean; // только просмотр, без редактирования
+  canAddCars?: boolean;
+  canViewCars?: boolean;
+  canManageLeads?: boolean; // включает редактирование своих лидов
+  canViewLeads?: boolean; // только просмотр своих лидов, без редактирования
+  isLeadManager?: boolean; // видит ВСЕХ лидов и ВСЕ задачи (как супер-админ для лидов)
 }
 
