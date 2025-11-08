@@ -335,7 +335,7 @@ export const BRANDS_AND_MODELS = [
       { title: 'RC' },
       { title: 'RC F' },
       { title: 'RX' },
-      { title: 'SC' },
+      { title: 'RZ' },
       { title: 'UX' }
     ]
   },
@@ -392,18 +392,6 @@ export const BRANDS_AND_MODELS = [
       { title: 'XF' },
       { title: 'XJ' },
       { title: 'XK' }
-    ]
-  },
-  {
-    title: 'Range Rover',
-    models: [
-      { title: 'Defender' },
-      { title: 'Discovery' },
-      { title: 'Discovery Sport' },
-      { title: 'Evoque' },
-      { title: 'Range Rover' },
-      { title: 'Range Rover Sport' },
-      { title: 'Range Rover Velar' }
     ]
   },
   {
@@ -614,47 +602,6 @@ export const BRANDS_AND_MODELS = [
     ]
   },
   {
-    title: 'Geely',
-    models: [
-      { title: 'Atlas' },
-      { title: 'Coolray' },
-      { title: 'Emgrand' },
-      { title: 'GC9' },
-      { title: 'Vision' }
-    ]
-  },
-  {
-    title: 'Chery',
-    models: [
-      { title: 'Arrizo 5' },
-      { title: 'Arrizo 6' },
-      { title: 'Tiggo 2' },
-      { title: 'Tiggo 3' },
-      { title: 'Tiggo 4' },
-      { title: 'Tiggo 5' },
-      { title: 'Tiggo 7' },
-      { title: 'Tiggo 8' }
-    ]
-  },
-  {
-    title: 'Great Wall',
-    models: [
-      { title: 'Haval H2' },
-      { title: 'Haval H6' },
-      { title: 'Haval H9' },
-      { title: 'Wingle' }
-    ]
-  },
-  {
-    title: 'BYD',
-    models: [
-      { title: 'F3' },
-      { title: 'G3' },
-      { title: 'S6' },
-      { title: 'Tang' }
-    ]
-  },
-  {
     title: 'Lincoln',
     models: [
       { title: 'Aviator' },
@@ -692,6 +639,306 @@ export const BRANDS_AND_MODELS = [
       { title: 'Grand Cherokee' },
       { title: 'Renegade' },
       { title: 'Wrangler' }
+    ]
+  },
+  {
+    title: 'Ford',
+    models: [
+      { title: 'Fiesta' },
+      { title: 'Focus' },
+      { title: 'Focus ST' },
+      { title: 'Fusion' },
+      { title: 'Mondeo' },
+      { title: 'Mustang' },
+      { title: 'Mustang Mach-E' },
+      { title: 'EcoSport' },
+      { title: 'Kuga' },
+      { title: 'Puma' },
+      { title: 'Edge' },
+      { title: 'Explorer' },
+      { title: 'Expedition' },
+      { title: 'Bronco' },
+      { title: 'Bronco Sport' },
+      { title: 'Ranger' },
+      { title: 'F-150' },
+      { title: 'F-150 Lightning' },
+      { title: 'Maverick' },
+      { title: 'Transit' },
+      { title: 'Transit Custom' },
+      { title: 'Transit Connect' },
+      { title: 'Galaxy' },
+      { title: 'S-MAX' },
+      { title: 'Tourneo Custom' }
+    ]
+  },
+  {
+    title: 'Skoda',
+    models: [
+      { title: 'Fabia' },
+      { title: 'Scala' },
+      { title: 'Rapid' },
+      { title: 'Octavia' },
+      { title: 'Superb' },
+      { title: 'Kamiq' },
+      { title: 'Karoq' },
+      { title: 'Kodiaq' },
+      { title: 'Enyaq iV' },
+      { title: 'Citigo' },
+      { title: 'Yeti' }
+    ]
+  },
+  {
+    title: 'Peugeot',
+    models: [
+      { title: '108' },
+      { title: '208' },
+      { title: '308' },
+      { title: '408' },
+      { title: '508' },
+      { title: '2008' },
+      { title: '3008' },
+      { title: '5008' },
+      { title: 'e-208' },
+      { title: 'e-2008' },
+      { title: 'Rifter' },
+      { title: 'Partner' },
+      { title: 'Expert' },
+      { title: 'Traveller' },
+      { title: 'RCZ' }
+    ]
+  },
+  {
+    title: 'Renault',
+    models: [
+      { title: 'Clio' },
+      { title: 'Megane' },
+      { title: 'Megane E-Tech' },
+      { title: 'Talisman' },
+      { title: 'Captur' },
+      { title: 'Kadjar' },
+      { title: 'Koleos' },
+      { title: 'Arkana' },
+      { title: 'Austral' },
+      { title: 'Scenic' },
+      { title: 'Zoe' },
+      { title: 'Twingo' },
+      { title: 'Kangoo' },
+      { title: 'Trafic' },
+      { title: 'Master' },
+      { title: 'Duster' }
+    ]
+  },
+  {
+    title: 'Opel',
+    models: [
+      { title: 'Corsa' },
+      { title: 'Corsa-e' },
+      { title: 'Astra' },
+      { title: 'Insignia' },
+      { title: 'Crossland' },
+      { title: 'Grandland' },
+      { title: 'Mokka' },
+      { title: 'Mokka-e' },
+      { title: 'Combo' },
+      { title: 'Vivaro' },
+      { title: 'Movano' },
+      { title: 'Zafira' },
+      { title: 'Meriva' }
+    ]
+  },
+  {
+    title: 'Mitsubishi',
+    models: [
+      { title: 'Lancer' },
+      { title: 'Outlander' },
+      { title: 'Outlander PHEV' },
+      { title: 'Eclipse Cross' },
+      { title: 'ASX' },
+      { title: 'Pajero' },
+      { title: 'Pajero Sport' },
+      { title: 'L200' },
+      { title: 'Space Star' },
+      { title: 'Mirage' }
+    ]
+  },
+  {
+    title: 'Land Rover',
+    models: [
+      { title: 'Defender' },
+      { title: 'Discovery' },
+      { title: 'Discovery Sport' },
+      { title: 'Range Rover' },
+      { title: 'Range Rover Sport' },
+      { title: 'Range Rover Evoque' },
+      { title: 'Range Rover Velar' },
+      { title: 'Freelander' }
+    ]
+  },
+  {
+    title: 'Mini',
+    models: [
+      { title: 'Cooper' },
+      { title: 'Cooper S' },
+      { title: 'Cooper SE' },
+      { title: 'Cooper D' },
+      { title: 'Clubman' },
+      { title: 'Countryman' },
+      { title: 'Paceman' },
+      { title: 'John Cooper Works' }
+    ]
+  },
+  {
+    title: 'Tesla',
+    models: [
+      { title: 'Model 3' },
+      { title: 'Model S' },
+      { title: 'Model X' },
+      { title: 'Model Y' },
+      { title: 'Cybertruck' },
+      { title: 'Roadster' }
+    ]
+  },
+  {
+    title: 'Lada',
+    models: [
+      { title: 'Vesta' },
+      { title: 'Granta' },
+      { title: 'Largus' },
+      { title: 'XRAY' },
+      { title: 'Niva' },
+      { title: 'Niva Travel' }
+    ]
+  },
+  {
+    title: 'Chevrolet',
+    models: [
+      { title: 'Camaro' },
+      { title: 'Corvette' },
+      { title: 'Malibu' },
+      { title: 'Impala' },
+      { title: 'Equinox' },
+      { title: 'Blazer' },
+      { title: 'Traverse' },
+      { title: 'Tahoe' },
+      { title: 'Suburban' },
+      { title: 'Silverado' }
+    ]
+  },
+  {
+    title: 'Smart',
+    models: [
+      { title: 'Fortwo' },
+      { title: 'Forfour' },
+      { title: 'EQ Fortwo' },
+      { title: 'EQ Forfour' },
+      { title: 'Roadster' }
+    ]
+  },
+  {
+    title: 'Bugatti',
+    models: [
+      { title: 'Chiron' },
+      { title: 'Veyron' }
+    ]
+  },
+  {
+    title: 'McLaren',
+    models: [
+      { title: '570S' },
+      { title: '570GT' },
+      { title: '600LT' },
+      { title: '720S' },
+      { title: 'GT' },
+      { title: 'Artura' }
+    ]
+  },
+  {
+    title: 'Saab',
+    models: [
+      { title: '9-3' },
+      { title: '9-5' }
+    ]
+  },
+  {
+    title: 'GMC',
+    models: [
+      { title: 'Acadia' },
+      { title: 'Canyon' },
+      { title: 'Sierra' },
+      { title: 'Terrain' },
+      { title: 'Yukon' },
+      { title: 'Yukon XL' },
+      { title: 'Hummer EV' }
+    ]
+  },
+  {
+    title: 'Ram',
+    models: [
+      { title: '1500' },
+      { title: '2500' },
+      { title: '3500' },
+      { title: 'ProMaster' }
+    ]
+  },
+  {
+    title: 'Buick',
+    models: [
+      { title: 'Enclave' },
+      { title: 'Encore' },
+      { title: 'Encore GX' },
+      { title: 'Envision' },
+      { title: 'LaCrosse' },
+      { title: 'Regal' }
+    ]
+  },
+  {
+    title: 'Lotus',
+    models: [
+      { title: 'Elise' },
+      { title: 'Evora' },
+      { title: 'Exige' },
+      { title: 'Emira' },
+      { title: 'Evija' }
+    ]
+  },
+  {
+    title: 'Cupra',
+    models: [
+      { title: 'Ateca' },
+      { title: 'Formentor' },
+      { title: 'Leon' },
+      { title: 'Born' },
+      { title: 'Tavascan' }
+    ]
+  },
+  {
+    title: 'Polestar',
+    models: [
+      { title: 'Polestar 1' },
+      { title: 'Polestar 2' },
+      { title: 'Polestar 3' },
+      { title: 'Polestar 4' }
+    ]
+  },
+  {
+    title: 'Lucid',
+    models: [
+      { title: 'Air' },
+      { title: 'Gravity' }
+    ]
+  },
+  {
+    title: 'Rivian',
+    models: [
+      { title: 'R1T' },
+      { title: 'R1S' }
+    ]
+  },
+  {
+    title: 'Alpine',
+    models: [
+      { title: 'A110' },
+      { title: 'A110 S' }
     ]
   }
 ];
