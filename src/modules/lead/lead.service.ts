@@ -1225,6 +1225,9 @@ Auto Broker"
           description: `Задача выполнена: ${task.title}`,
         });
       }
+      
+      // АВТОМАТИЧЕСКИЙ ПЕРЕХОД К СЛЕДУЮЩЕМУ ЭТАПУ при выполнении ключевой задачи
+      await this.autoAdvancePipelineStage(task.leadId, task.taskType);
     } else if (data.status === TaskStatus.IN_PROGRESS && task.status === TaskStatus.PENDING) {
       if (adminId) {
         await this.createActivity({
@@ -1238,6 +1241,54 @@ Auto Broker"
 
     Object.assign(task, data);
     return await this.leadTaskRepository.save(task);
+  }
+  
+  // Автоматический переход к следующему этапу воронки при выполнении ключевых задач
+  private async autoAdvancePipelineStage(leadId: number, completedTaskType: TaskType): Promise<void> {
+    const lead = await this.getLeadById(leadId);
+    if (!lead) return;
+    
+    // Маппинг: какая задача переводит на какой этап
+    const taskToStageMap: Partial<Record<TaskType, PipelineStage>> = {
+      [TaskType.FIRST_CONTACT]: PipelineStage.QUALIFICATION,
+      [TaskType.QUALIFICATION]: PipelineStage.NEEDS_ANALYSIS,
+      [TaskType.CAR_PREFERENCES]: PipelineStage.PRESENTATION, // Когда узнали все потребности
+      [TaskType.SEND_OFFERS]: PipelineStage.NEGOTIATION,
+      [TaskType.SEND_CALCULATION]: PipelineStage.NEGOTIATION,
+      [TaskType.SCHEDULE_MEETING]: PipelineStage.DEAL_CLOSING,
+      [TaskType.SEND_CONTRACT]: PipelineStage.DEAL_CLOSING,
+      [TaskType.GET_PREPAYMENT]: PipelineStage.DEAL_CLOSING,
+      [TaskType.CONFIRM_DEAL]: PipelineStage.WON,
+    };
+    
+    const nextStage = taskToStageMap[completedTaskType];
+    
+    // Если для этого типа задачи определен следующий этап И текущий этап ниже
+    if (nextStage) {
+      const currentStageIndex = this.getStageIndex(lead.pipelineStage);
+      const nextStageIndex = this.getStageIndex(nextStage);
+      
+      // Переходим только вперед, не назад
+      if (nextStageIndex > currentStageIndex) {
+        lead.pipelineStage = nextStage;
+        await this.leadRepository.save(lead);
+      }
+    }
+  }
+  
+  private getStageIndex(stage: PipelineStage): number {
+    const stages = [
+      PipelineStage.NEW_LEAD,
+      PipelineStage.FIRST_CONTACT,
+      PipelineStage.QUALIFICATION,
+      PipelineStage.NEEDS_ANALYSIS,
+      PipelineStage.PRESENTATION,
+      PipelineStage.NEGOTIATION,
+      PipelineStage.DEAL_CLOSING,
+      PipelineStage.WON,
+      PipelineStage.LOST,
+    ];
+    return stages.indexOf(stage);
   }
 
   // Получить все задачи админа (УЛУЧШЕНО: поддержка супер-админа и Lead Manager)
