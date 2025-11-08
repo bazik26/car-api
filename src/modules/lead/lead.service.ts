@@ -302,11 +302,28 @@ export class LeadService {
       updateLeadDto.projectId = admin.projectId || ProjectType.OFFICE_1;
     }
     
+    const hadTasksBefore = (lead.tasks?.length || 0) > 0;
+    const previousStage = lead.pipelineStage;
+    const previousAssignedAdminId = lead.assignedAdminId;
     const oldValues = { ...lead };
 
     Object.assign(lead, updateLeadDto);
 
     const updatedLead = await this.leadRepository.save(lead);
+
+    const pipelineStageChanged =
+      updateLeadDto.pipelineStage &&
+      updateLeadDto.pipelineStage !== previousStage;
+    const assignedAdminChanged =
+      updateLeadDto.assignedAdminId !== undefined &&
+      updateLeadDto.assignedAdminId !== previousAssignedAdminId;
+
+    if (!hadTasksBefore || pipelineStageChanged || assignedAdminChanged) {
+      await this.createDefaultTasksForLead(
+        updatedLead.id,
+        updatedLead.assignedAdminId || adminId,
+      );
+    }
 
     // Пересчитываем score
     await this.calculateLeadScore(id);
@@ -483,6 +500,25 @@ export class LeadService {
     const lead = await this.getLeadById(leadId);
     if (!lead) {
       return;
+    }
+
+    // Проверяем существующие задачи, чтобы не создавать дубликаты
+    const existingTasks = await this.leadTaskRepository.find({
+      where: { leadId },
+    });
+    const existingTaskTypes = new Set(existingTasks.map((task) => task.taskType));
+
+    // Если лид переназначен – обновляем назначение невыполненных задач
+    if (existingTasks.length && adminId) {
+      const tasksToReassign = existingTasks.filter(
+        (task) => !task.completed && task.adminId !== adminId,
+      );
+      if (tasksToReassign.length) {
+        for (const task of tasksToReassign) {
+          task.adminId = adminId;
+        }
+        await this.leadTaskRepository.save(tasksToReassign);
+      }
     }
 
     // Список задач с подробными скриптами (в правильной последовательности)
@@ -1152,7 +1188,32 @@ Auto Broker"
 
     // Создаем задачи последовательно
     for (const taskData of defaultTasks) {
+      if (existingTaskTypes.has(taskData.taskType)) {
+        continue;
+      }
       await this.createTask(taskData);
+      existingTaskTypes.add(taskData.taskType);
+    }
+  }
+
+  private async ensureTasksForAdminLeads(targetAdminId: number, admin?: AdminEntity): Promise<void> {
+    const isLeadManager = admin?.permissions?.isLeadManager || false;
+
+    const queryBuilder = this.leadRepository
+      .createQueryBuilder('lead')
+      .leftJoin('lead.tasks', 'task')
+      .where('lead.assignedAdminId IS NOT NULL');
+
+    if (!admin?.isSuper && !isLeadManager) {
+      queryBuilder.andWhere('lead.assignedAdminId = :adminId', { adminId: targetAdminId });
+    }
+
+    queryBuilder.groupBy('lead.id').having('COUNT(task.id) = 0');
+
+    const leadsWithoutTasks = await queryBuilder.getMany();
+
+    for (const lead of leadsWithoutTasks) {
+      await this.createDefaultTasksForLead(lead.id, lead.assignedAdminId || targetAdminId);
     }
   }
 
@@ -1272,6 +1333,10 @@ Auto Broker"
       if (nextStageIndex > currentStageIndex) {
         lead.pipelineStage = nextStage;
         await this.leadRepository.save(lead);
+        await this.createDefaultTasksForLead(
+          lead.id,
+          lead.assignedAdminId,
+        );
       }
     }
   }
@@ -1297,6 +1362,8 @@ Auto Broker"
     completed?: boolean;
     leadId?: number;
   }, admin?: AdminEntity): Promise<LeadTaskEntity[]> {
+    await this.ensureTasksForAdminLeads(adminId, admin);
+
     const queryBuilder = this.leadTaskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.lead', 'lead')
