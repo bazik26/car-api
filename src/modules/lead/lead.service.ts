@@ -33,11 +33,18 @@ export interface UpdateLeadDto {
   source?: LeadSource;
   status?: LeadStatus;
   priority?: LeadPriority;
+  pipelineStage?: PipelineStage;
   hasTelegramContact?: boolean;
   telegramUsername?: string;
   assignedAdminId?: number;
   description?: string;
   projectId?: ProjectType;
+  budget?: { min: number; max: number; currency: string };
+  carPreferences?: any;
+  city?: string;
+  region?: string;
+  timeline?: string;
+  objections?: string;
 }
 
 export interface CreateLeadCommentDto {
