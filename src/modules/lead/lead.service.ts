@@ -1249,5 +1249,64 @@ export class LeadService {
 
     return updatedLead;
   }
+
+  // Очистить старые задачи и создать новые 3 задачи для существующих лидов
+  async migrateTasksToNewSystem(leadId?: number): Promise<{ updated: number; deleted: number }> {
+    const queryBuilder = this.leadRepository.createQueryBuilder('lead');
+    
+    if (leadId) {
+      queryBuilder.where('lead.id = :leadId', { leadId });
+    }
+    
+    const leads = await queryBuilder.getMany();
+    let updatedCount = 0;
+    let deletedCount = 0;
+
+    for (const lead of leads) {
+      if (!lead.assignedAdminId) {
+        continue;
+      }
+
+      // Получаем все задачи лида
+      const existingTasks = await this.leadTaskRepository.find({
+        where: { leadId: lead.id },
+      });
+
+      // Определяем типы новых задач
+      const newTaskTypes = [
+        TaskType.FIRST_CONTACT,
+        TaskType.SEND_OFFERS,
+        TaskType.SEND_CONTRACT,
+      ];
+
+      // Удаляем старые задачи, которые не входят в новые 3
+      const tasksToDelete = existingTasks.filter(
+        (task) => !newTaskTypes.includes(task.taskType),
+      );
+
+      if (tasksToDelete.length > 0) {
+        await this.leadTaskRepository.remove(tasksToDelete);
+        deletedCount += tasksToDelete.length;
+      }
+
+      // Создаем новые 3 задачи, если их нет
+      await this.createDefaultTasksForLead(lead.id, lead.assignedAdminId);
+      
+      const finalTasks = await this.leadTaskRepository.find({
+        where: { leadId: lead.id },
+      });
+
+      // Проверяем, что у нас есть все 3 новые задачи
+      const hasAllNewTasks = newTaskTypes.every((type) =>
+        finalTasks.some((task) => task.taskType === type),
+      );
+
+      if (hasAllNewTasks) {
+        updatedCount++;
+      }
+    }
+
+    return { updated: updatedCount, deleted: deletedCount };
+  }
 }
 

@@ -190,6 +190,12 @@ export class LeadController {
     return await this.leadService.getLeadTasks(leadId);
   }
 
+  // Миграция задач: очистить старые и создать новые 3 задачи
+  @Post('migrate-tasks')
+  async migrateTasks(@Body() body?: { leadId?: number }) {
+    return await this.leadService.migrateTasksToNewSystem(body?.leadId);
+  }
+
   @Put('tasks/:taskId')
   async updateTask(
     @Param('taskId', ParseIntPipe) taskId: number,
