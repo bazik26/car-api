@@ -606,7 +606,6 @@ export class LeadService {
           step: 3,
           preferredBrands: [],
           preferredModels: [],
->>>>>>> Stashed changes
           preferredYearFrom: null,
           preferredYearTo: null,
           preferredMileageMax: null,
