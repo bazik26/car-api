@@ -77,8 +77,9 @@ export class CarService {
   }) {
     const queryBuilder = this.carRepo
       .createQueryBuilder('car')
-      .leftJoinAndSelect('car.files', 'files')
-      .where('car.isSold = :isSold', { isSold: false }); // Только непроданные автомобили
+      .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
+      .where('car.isSold = :isSold', { isSold: false }) // Только непроданные автомобили
+      .andWhere('car.deletedAt IS NULL'); // Только неудаленные автомобили
 
     // Применяем лимит
     if (params?.limit) {
@@ -102,12 +103,14 @@ export class CarService {
   }
 
   async getSoldCars(limit: number = 15) {
-    return await this.carRepo.find({
-      where: { isSold: true },
-      relations: ['files'],
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    return await this.carRepo
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
+      .where('car.isSold = :isSold', { isSold: true })
+      .andWhere('car.deletedAt IS NULL')
+      .orderBy('car.createdAt', 'DESC')
+      .limit(limit)
+      .getMany();
   }
 
   async searchCars(carSearchDTO: CarSearchDTO) {
