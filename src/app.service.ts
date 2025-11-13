@@ -59,9 +59,10 @@ export class AppService {
             source: source,
             description: payload.message || payload.carInfo || undefined,
             hasTelegramContact: hasTelegramContact,
+            projectSource: payload.domain, // ✅ Сохраняем URL источника (домен сайта)
           });
 
-          console.log('AppService: Lead automatically created from contact form');
+          console.log('AppService: Lead automatically created from contact form. Domain:', payload.domain);
         } catch (error) {
           console.error('AppService: Error creating lead from contact form:', error);
           // Не прерываем выполнение, если не удалось создать лид
