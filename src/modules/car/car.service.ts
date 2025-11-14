@@ -422,7 +422,7 @@ export class CarService {
     };
 
     // Получаем конфигурацию сайта (по умолчанию adenatrans)
-    const siteConfig = SITE_CONFIG[siteId] || SITE_CONFIG.adenatrans;
+    const siteConfig = (siteId && SITE_CONFIG[siteId]) || SITE_CONFIG.adenatrans;
 
     const currentDate = new Date().toISOString();
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
