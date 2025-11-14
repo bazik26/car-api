@@ -140,10 +140,10 @@ export class CarController {
 
   @Get('/yml-export')
   @Public()
-  async getYmlExport(@Res() res: Response) {
+  async getYmlExport(@Res() res: Response, @Query('site') site?: string) {
     try {
       const cars = await this.carService.getActiveCarsForYml();
-      const xmlContent = this.carService.generateYmlXml(cars);
+      const xmlContent = this.carService.generateYmlXml(cars, site);
 
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
       res.setHeader('Access-Control-Allow-Origin', '*');

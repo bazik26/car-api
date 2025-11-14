@@ -398,14 +398,45 @@ export class CarService {
       .getMany();
   }
 
-  generateYmlXml(cars: CarEntity[]): string {
+  generateYmlXml(cars: CarEntity[], siteId?: string): string {
+    // Маппинг сайтов
+    const SITE_CONFIG = {
+      adenatrans: {
+        name: 'Adena Trans',
+        companyName: 'Adena Trans Company',
+        url: 'https://adenatrans.ru',
+        apiImageUrl: 'https://adenatrans.ru/api/images/cars',
+      },
+      vamauto: {
+        name: 'Vam Auto',
+        companyName: 'Vam Auto Company',
+        url: 'https://vamauto.com',
+        apiImageUrl: 'https://vamauto.com/api/images/cars',
+      },
+      primeautos: {
+        name: 'Prime Autos',
+        companyName: 'Prime Autos Company',
+        url: 'https://prime-autos.ru',
+        apiImageUrl: 'https://prime-autos.ru/api/images/cars',
+      },
+      autocars: {
+        name: 'Auto C Cars',
+        companyName: 'Auto C Cars Company',
+        url: 'https://www.auto-c-cars.ru',
+        apiImageUrl: 'https://www.auto-c-cars.ru/api/images/cars',
+      },
+    };
+
+    // Получаем конфигурацию сайта (по умолчанию adenatrans)
+    const siteConfig = SITE_CONFIG[siteId] || SITE_CONFIG.adenatrans;
+
     const currentDate = new Date().toISOString();
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
     const ymlHeader = `<yml_catalog date="${currentDate}">
 <shop>
-<name>Adena Trans</name>
-<company>Adena Trans Company</company>
-<url>https://adenatrans.ru/</url>
+<name>${this.escapeXml(siteConfig.name)}</name>
+<company>${this.escapeXml(siteConfig.companyName)}</company>
+<url>${siteConfig.url}/</url>
 <currencies>
 <currency id="RUB" rate="1"/>
 </currencies>
@@ -433,11 +464,11 @@ export class CarService {
 
         return `
 <offer id="${car.id}" available="true">
-<url>https://adenatrans.ru/car/${car.id}</url>
+<url>${siteConfig.url}/car/${car.id}</url>
 <price>${car.price || 0}</price>
 <currencyId>RUB</currencyId>
 <categoryId>${categoryId}</categoryId>
-<picture>${imageUrl}</picture>
+<picture>${siteConfig.apiImageUrl}/${car.id}</picture>
 <vendor>${this.escapeXml(car.brand || '')}</vendor>
 <vendorCode>${this.escapeXml(car.vin || '')}</vendorCode>
 <name>${this.escapeXml(carName)}</name>
