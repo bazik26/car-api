@@ -407,17 +407,11 @@ export class CarService {
         url: 'https://adenatrans.ru',
         apiImageUrl: 'https://adenatrans.ru/api/images/cars',
       },
-      vamauto: {
-        name: 'Vam Auto',
-        companyName: 'Vam Auto Company',
-        url: 'https://vamauto.com',
-        apiImageUrl: 'https://vamauto.com/api/images/cars',
-      },
-      primeautos: {
-        name: 'Prime Autos',
-        companyName: 'Prime Autos Company',
-        url: 'https://prime-autos.ru',
-        apiImageUrl: 'https://prime-autos.ru/api/images/cars',
+      autobroker: {
+        name: 'AutoBroker Yar',
+        companyName: 'AutoBroker Yar Company',
+        url: 'https://autobroker-yar.ru',
+        apiImageUrl: 'https://autobroker-yar.ru/api/images/cars',
       },
       autocars: {
         name: 'Auto C Cars',
