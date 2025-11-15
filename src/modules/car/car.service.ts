@@ -405,19 +405,19 @@ export class CarService {
         name: 'Adena Trans',
         companyName: 'Adena Trans Company',
         url: 'https://adenatrans.ru',
-        apiImageUrl: 'https://adenatrans.ru/api/images/cars',
+        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
       },
       autobroker: {
         name: 'AutoBroker Yar',
         companyName: 'AutoBroker Yar Company',
         url: 'https://autobroker-yar.ru',
-        apiImageUrl: 'https://autobroker-yar.ru/api/images/cars',
+        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
       },
       autocars: {
         name: 'Auto C Cars',
         companyName: 'Auto C Cars Company',
         url: 'https://www.auto-c-cars.ru',
-        apiImageUrl: 'https://www.auto-c-cars.ru/api/images/cars',
+        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
       },
     };
 
