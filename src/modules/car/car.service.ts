@@ -454,15 +454,15 @@ export class CarService {
         const categoryId = this.getCategoryId(car);
         const carName = this.generateCarName(car);
         const description = this.generateDescription(car);
-        const imageUrl = this.getImageUrl(car);
+        const imageUrl = this.getImageUrlForSite(car, siteConfig);
 
         return `
 <offer id="${car.id}" available="true">
-<url>${siteConfig.url}/car/${car.id}</url>
+<url>${siteConfig.url}/cars/${car.id}</url>
 <price>${car.price || 0}</price>
 <currencyId>RUB</currencyId>
 <categoryId>${categoryId}</categoryId>
-<picture>${siteConfig.apiImageUrl}/${car.id}</picture>
+<picture>${imageUrl}</picture>
 <vendor>${this.escapeXml(car.brand || '')}</vendor>
 <vendorCode>${this.escapeXml(car.vin || '')}</vendorCode>
 <name>${this.escapeXml(carName)}</name>
@@ -575,5 +575,16 @@ export class CarService {
       }
     }
     return `https://adenatrans.ru/api/images/cars/${car.id}`;
+  }
+
+  private getImageUrlForSite(car: CarEntity, siteConfig: any): string {
+    if (car.files && car.files.length > 0) {
+      const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
+      if (firstFile) {
+        const carIdPadded = car.id.toString().padStart(6, '0');
+        return `${siteConfig.apiImageUrl}/${carIdPadded}/${firstFile.filename}`;
+      }
+    }
+    return `${siteConfig.apiImageUrl}/${car.id}`;
   }
 }
