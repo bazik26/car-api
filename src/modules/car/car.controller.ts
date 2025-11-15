@@ -94,7 +94,20 @@ export class CarController {
   @UseInterceptors(
     FilesInterceptor('images', 20, {
       storage: diskStorage({
-        destination: process.env.UPLOAD_DIR || './images',
+        destination: (req, file, callback) => {
+          const carId = req.params.carId;
+          const paddedCarId = carId.padStart(6, '0');
+          const uploadDir = process.env.UPLOAD_DIR || './images';
+          const carFolder = join(uploadDir, 'cars', paddedCarId);
+          
+          // Создаем папку если не существует
+          const fs = require('fs');
+          if (!fs.existsSync(carFolder)) {
+            fs.mkdirSync(carFolder, { recursive: true });
+          }
+          
+          callback(null, carFolder);
+        },
         filename: (_, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
