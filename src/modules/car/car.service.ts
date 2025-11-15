@@ -579,16 +579,25 @@ export class CarService {
 
   private getImageUrlForSite(car: CarEntity, siteConfig: any): string {
     if (car.files && car.files.length > 0) {
-      // Вариант А: Приоритет внешним URL (Flickr, Google Cloud Storage)
-      // Ищем первый файл с внешним URL
-      const externalFile = car.files.find((f) => !f.deletedAt && f.path && f.path.startsWith('http'));
-      if (externalFile) {
-        return externalFile.path;
+      const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
+      if (firstFile && firstFile.path) {
+        // Приоритет 1: Если path - это полный URL (http/https), используем напрямую
+        if (firstFile.path.startsWith('http')) {
+          return firstFile.path;
+        }
+        
+        // Приоритет 2: Относительный путь - строим URL через Railway API
+        const carIdPadded = car.id.toString().padStart(6, '0');
+        
+        // Убираем префикс "images/" если он есть
+        const cleanPath = firstFile.path.replace(/^images\//, '');
+        
+        // Строим полный URL: https://car-api-production.up.railway.app/cars/{paddedCarId}/{filename}
+        return `https://car-api-production.up.railway.app/cars/${carIdPadded}/${cleanPath}`;
       }
     }
     
-    // Если нет внешних URL - используем placeholder
-    // Это безопаснее чем пытаться использовать локальные файлы, которых может не быть на Railway
+    // Fallback - если совсем нет файлов
     return 'https://via.placeholder.com/800x600?text=No+Image';
   }
 }
