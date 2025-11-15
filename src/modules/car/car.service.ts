@@ -582,18 +582,20 @@ export class CarService {
       const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
       if (firstFile && firstFile.path) {
         // Приоритет 1: Если path - это полный URL (http/https), используем напрямую
+        // Примеры: Flickr, Google Cloud Storage, Railway полные URL
         if (firstFile.path.startsWith('http')) {
           return firstFile.path;
         }
         
-        // Приоритет 2: Относительный путь - строим URL через Railway API
-        const carIdPadded = car.id.toString().padStart(6, '0');
+        // Приоритет 2: Относительный путь - файлы в корне images/
+        // ServeStaticModule раздает файлы из /app/images по корню /
+        // Примеры: "images/1758373074193-975001566.jpg" или "1759305191068-703834019.jpg"
         
         // Убираем префикс "images/" если он есть
         const cleanPath = firstFile.path.replace(/^images\//, '');
         
-        // Строим полный URL: https://car-api-production.up.railway.app/cars/{paddedCarId}/{filename}
-        return `https://car-api-production.up.railway.app/cars/${carIdPadded}/${cleanPath}`;
+        // Строим URL через Railway API корень (БЕЗ /cars/)
+        return `https://car-api-production.up.railway.app/${cleanPath}`;
       }
     }
     
