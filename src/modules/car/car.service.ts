@@ -581,6 +581,12 @@ export class CarService {
     if (car.files && car.files.length > 0) {
       const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
       if (firstFile) {
+        // Если path - это полный URL (начинается с http), используем его напрямую
+        if (firstFile.path && firstFile.path.startsWith('http')) {
+          return firstFile.path;
+        }
+        
+        // Если path - относительный, строим URL через API домена
         const carIdPadded = car.id.toString().padStart(6, '0');
         return `${siteConfig.apiImageUrl}/${carIdPadded}/${firstFile.filename}`;
       }
