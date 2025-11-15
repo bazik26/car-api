@@ -579,9 +579,16 @@ export class CarService {
 
   private getImageUrlForSite(car: CarEntity, siteConfig: any): string {
     if (car.files && car.files.length > 0) {
+      // Ищем первый файл с внешним URL (Flickr, Google Cloud Storage и т.д.)
+      const externalFile = car.files.find((f) => !f.deletedAt && f.path && f.path.startsWith('http'));
+      if (externalFile) {
+        return externalFile.path;
+      }
+      
+      // Если нет внешних URL, пытаемся использовать локальный файл
       const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
       if (firstFile) {
-        // Если path - это полный URL (начинается с http), используем его напрямую
+        // Если path - это полный URL (на случай если не нашли в первом поиске)
         if (firstFile.path && firstFile.path.startsWith('http')) {
           return firstFile.path;
         }
@@ -591,6 +598,7 @@ export class CarService {
         return `${siteConfig.apiImageUrl}/${carIdPadded}/${firstFile.filename}`;
       }
     }
-    return `${siteConfig.apiImageUrl}/${car.id}`;
+    // Fallback - placeholder image
+    return 'https://via.placeholder.com/800x600?text=No+Image';
   }
 }
