@@ -289,13 +289,14 @@ export class CarService {
   }
 
   async uploadCarImages(carId: number, files: Express.Multer.File[]) {
+    const paddedCarId = carId.toString().padStart(6, '0');
     const entities = files.map((file) =>
       this.fileRepo.create({
         filename: file.filename,
         mimetype: file.mimetype,
-        // Сохраняем только имя файла без пути к папке
+        // Сохраняем полный относительный путь от папки images
         // ServeStaticModule раздаёт файлы из /app/images по корню /
-        path: file.filename,
+        path: `cars/${paddedCarId}/${file.filename}`,
         car: {
           id: carId,
         },
