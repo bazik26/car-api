@@ -1,4 +1,4 @@
-import { extname, join } from 'path';
+import { extname } from 'path';
 
 import {
   Body,
@@ -11,11 +11,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   Query,
-  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
-import { createReadStream, existsSync } from 'fs';
 
 import { diskStorage } from 'multer';
 
@@ -94,20 +91,7 @@ export class CarController {
   @UseInterceptors(
     FilesInterceptor('images', 20, {
       storage: diskStorage({
-        destination: (req, file, callback) => {
-          const carId = req.params.carId;
-          const paddedCarId = carId.padStart(6, '0');
-          const uploadDir = process.env.UPLOAD_DIR || './images';
-          const carFolder = join(uploadDir, 'cars', paddedCarId);
-          
-          // Создаем папку если не существует
-          const fs = require('fs');
-          if (!fs.existsSync(carFolder)) {
-            fs.mkdirSync(carFolder, { recursive: true });
-          }
-          
-          callback(null, carFolder);
-        },
+        destination: process.env.UPLOAD_DIR || './images',
         filename: (_, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -166,34 +150,4 @@ export class CarController {
     }
   }
 
-  @Get('/:carId/:filename')
-  @Public()
-  async getCarImage(
-    @Param('carId') carId: string,
-    @Param('filename') filename: string,
-    @Res() res: Response
-  ) {
-    try {
-      // Добавляем нули впереди для соответствия названиям папок (например: 1855 -> 001855)
-      const paddedCarId = carId.padStart(6, '0');
-      const filePath = join(process.cwd(), 'images', 'cars', paddedCarId, filename);
-      
-      if (!existsSync(filePath)) {
-        return res.status(404).json({ 
-          error: 'Image not found',
-          path: filePath 
-        });
-      }
-
-      // Устанавливаем правильные заголовки для изображений
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Content-Type', `image/${filename.split('.').pop()}`);
-      
-      const fileStream = createReadStream(filePath);
-      fileStream.pipe(res);
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  }
 }
