@@ -11,8 +11,10 @@ import {
   UseInterceptors,
   UploadedFiles,
   Query,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 
 import { diskStorage } from 'multer';
 
