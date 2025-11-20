@@ -32,6 +32,8 @@ async function bootstrap() {
       'https://www.autobroker-yar.ru',
       'https://auto-c-cars.ru',
       'https://www.auto-c-cars.ru',
+      'https://avtoznatoki.ru',
+      'https://www.avtoznatoki.ru',
       'https://shop-ytb-client.onrender.com',
       'https://putinxuylo.ru',
       'https://www.putinxuylo.ru'
