@@ -32,7 +32,7 @@ export class CarEntity {
   @Column({ type: 'int', unsigned: true, nullable: true })
   mileage: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, unique: true })
   vin: string;
 
   @Column({ nullable: true })
