@@ -250,7 +250,8 @@ export const BRANDS_AND_MODELS = [
       { title: 'Sentra' },
       { title: 'Titan' },
       { title: 'Versa' },
-      { title: 'Versa Note' }
+      { title: 'Versa Note' },
+      { title: 'X-Trail' }
     ]
   },
   {
