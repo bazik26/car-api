@@ -45,4 +45,15 @@ export class AdminService {
     await this.adminRepo.update(id, adminData);
     return await this.getAdmin(id);
   }
+
+  async restoreAllAdmins() {
+    // Восстанавливаем всех удаленных админов
+    await this.adminRepo.restore({ deletedAt: undefined });
+    const restoredAdmins = await this.getAdminsAll();
+    return {
+      message: 'Все админы восстановлены',
+      total: restoredAdmins.length,
+      admins: restoredAdmins,
+    };
+  }
 }

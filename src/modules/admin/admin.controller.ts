@@ -37,4 +37,10 @@ export class AdminController {
   restoreAdmin(@Param('adminId') adminId: number): Promise<void> {
     return this.adminService.restoreAdmin(adminId);
   }
+
+  @Get('/restore-all-admins')
+  @Public()
+  async restoreAllAdmins() {
+    return await this.adminService.restoreAllAdmins();
+  }
 }
