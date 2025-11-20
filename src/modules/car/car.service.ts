@@ -252,15 +252,7 @@ export class CarService {
     // Всегда устанавливаем projectId на основе админа (безопасность)
     car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
 
-    try {
-      return await this.carRepo.save(car);
-    } catch (error) {
-      // Проверяем дублирование VIN кода
-      if (error.code === 'ER_DUP_ENTRY' && error.message.includes('vin')) {
-        throw new Error(`Машина с VIN кодом "${car.vin}" уже существует в базе данных`);
-      }
-      throw error;
-    }
+    return await this.carRepo.save(car);
   }
 
   async getCar(id: number) {
@@ -291,15 +283,7 @@ export class CarService {
       updateData.projectId = this.admin.projectId || ProjectType.OFFICE_1;
     }
     
-    try {
-      await this.carRepo.update(carId, updateData);
-    } catch (error) {
-      // Проверяем дублирование VIN кода
-      if (error.code === 'ER_DUP_ENTRY' && error.message.includes('vin')) {
-        throw new Error(`Машина с VIN кодом "${updateData.vin}" уже существует в базе данных`);
-      }
-      throw error;
-    }
+    await this.carRepo.update(carId, updateData);
 
     return await this.getCar(carId);
   }
