@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -215,6 +215,7 @@ export class CarService {
       const cars = await this.carRepo
         .createQueryBuilder('car')
         .leftJoinAndSelect('car.files', 'files')
+        .leftJoinAndSelect('car.admin', 'admin')
         .where('car.projectId = :projectId', { projectId: adminProjectId })
         .orWhere('(car.projectId IS NULL AND car.adminId = :adminId)', { adminId: this.admin.id })
         .orderBy('car.deletedAt', 'ASC')
@@ -230,7 +231,7 @@ export class CarService {
     // Для суперадминов показываем все машины
     const allCars = await this.carRepo.find({
       withDeleted: true,
-      relations: ['files'],
+      relations: ['files', 'admin'],
       order: {
         deletedAt: 'ASC',
         id: 'DESC',
@@ -251,6 +252,21 @@ export class CarService {
     car.admin = this.admin;
     // Всегда устанавливаем projectId на основе админа (безопасность)
     car.projectId = this.admin.projectId || ProjectType.OFFICE_1;
+
+    // Проверка на дубликаты по VIN (если VIN указан)
+    if (car.vin && car.vin.trim()) {
+      const existingCar = await this.carRepo.findOne({
+        where: {
+          vin: car.vin.trim(),
+          projectId: car.projectId,
+          deletedAt: null, // Проверяем только неудаленные машины
+        },
+      });
+
+      if (existingCar) {
+        throw new ConflictException(`Автомобиль с VIN ${car.vin} уже существует в базе данных`);
+      }
+    }
 
     return await this.carRepo.save(car);
   }

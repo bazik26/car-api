@@ -76,7 +76,12 @@ export class CarController {
 
   @Post('/car')
   async createCar(@Body() car: any) {
-    return await this.carService.createCar(car);
+    try {
+      return await this.carService.createCar(car);
+    } catch (error) {
+      // Пробрасываем ошибку дальше, чтобы NestJS правильно обработал статус код
+      throw error;
+    }
   }
 
   @Get('/car/:carId')
