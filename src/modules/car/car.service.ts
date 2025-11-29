@@ -3,7 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Request } from 'express';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 
 import { CarSearchDTO } from '../../dtos/car.dto';
 
@@ -259,7 +259,7 @@ export class CarService {
         where: {
           vin: car.vin.trim(),
           projectId: car.projectId,
-          deletedAt: null, // Проверяем только неудаленные машины
+          deletedAt: IsNull(), // Проверяем только неудаленные машины
         },
       });
 

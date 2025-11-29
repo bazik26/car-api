@@ -1,0 +1,37 @@
+---
+description: >
+  Architecture guide for the NestJS backend powering all car projects.
+appliesTo:
+  - car-api/**
+---
+
+# Core Architecture
+
+- **Stack**: NestJS 11, TypeORM 0.3 with MySQL, JWT auth, Socket.IO for chat, static file serving for car images.
+- **Modules**:  
+  - `admin` handles admin CRUD, migrations (`admin-migration.service.ts`, `data-migration.service.ts`).  
+  - `auth` provides JWT guards/strategies and exposes `/auth/signin`.  
+  - `car` is request-scoped; reads the authenticated admin from `REQUEST` and enforces office isolation on every query/mutation.  
+  - `lead` governs leads, tasks, meetings, attachments, activities, and tags with automatic task seeding and scoring.  
+  - `chat` manages chat sessions, websocket gateway, and project routing.  
+  - `stats` exposes aggregated dashboards for admin and client apps.
+- **Entities**: Stored under `src/db`; key ones (`AdminEntity`, `LeadEntity`, `CarEntity`, `ChatSessionEntity`) all contain a `projectId` (`ProjectType` enum).
+
+# Office Separation
+
+- `projectId` is mandatory for `LeadEntity` and `CarEntity`. Every service method sets or filters by `admin.projectId`; cross-office access throws.  
+- Default project falls back to `ProjectType.OFFICE_1`; migrations (`migrations/add_project_id_*`) backfill data.
+- Lead creation auto-assigns managers using `autoAssignAdmin` (round-robin + load balancing) while respecting office and permissions (`AdminPermissions` flags).
+
+# API Contracts
+
+- REST base URL is `${environment.API_URL}` used by Angular/Next clients; keep DTOs in `src/dtos`.  
+- `CarService` exposes search, admin CRUD, sold car flags, and image upload via `multer`.  
+- `LeadService` offers lead lifecycle, tasks, meetings, attachments, comments, tags, scoring, and follow-up scheduling.  
+- Websocket gateway under `chat.gateway.ts` broadcasts chat updates scoped by `projectId`.
+
+# Local Development
+
+- Copy `.env.example` (if present) or configure TypeORM connection via env vars; run migrations using Nest CLI or TypeORM CLI scripts.  
+- Use `npm run start:dev` for hot reload; static images served from `/images`.  
+- When adding modules, register them in `app.module.ts` and expose DTOs with validation decorators; ensure new tables include `projectId`.
