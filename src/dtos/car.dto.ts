@@ -131,4 +131,8 @@ export class CarSearchDTO {
   @IsOptional()
   @IsNumber()
   limit?: number = 12;
+
+  @IsOptional()
+  @IsString()
+  projectId?: string;
 }

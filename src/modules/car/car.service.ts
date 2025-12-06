@@ -35,15 +35,24 @@ export class CarService {
     return BRANDS_AND_MODELS;
   }
 
-  async getBrandsAndModelsWithCount() {
-    const raw = await this.carRepo
+  async getBrandsAndModelsWithCount(projectId?: string) {
+    // Защита: если projectId не передан, используем office_1 по умолчанию
+    const effectiveProjectId = projectId && Object.values(ProjectType).includes(projectId as ProjectType)
+      ? projectId
+      : ProjectType.OFFICE_1;
+
+    const qb = this.carRepo
       .createQueryBuilder('car')
       .select('car.brand', 'brand')
       .addSelect('car.model', 'model')
       .addSelect('COUNT(car.id)', 'count')
+      .where('car.deletedAt IS NULL')
+      .andWhere('car.isSold = :isSold', { isSold: false })
+      .andWhere('car.projectId = :projectId', { projectId: effectiveProjectId })
       .groupBy('car.brand')
-      .addGroupBy('car.model')
-      .getRawMany();
+      .addGroupBy('car.model');
+
+    const raw = await qb.getRawMany();
 
     const result: {
       title: string;
@@ -74,12 +83,19 @@ export class CarService {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     random?: boolean;
+    projectId?: string;
   }) {
+    // Защита: если projectId не передан, используем office_1 по умолчанию
+    const effectiveProjectId = params?.projectId && Object.values(ProjectType).includes(params.projectId as ProjectType)
+      ? params.projectId
+      : ProjectType.OFFICE_1;
+
     const queryBuilder = this.carRepo
       .createQueryBuilder('car')
       .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
       .where('car.isSold = :isSold', { isSold: false }) // Только непроданные автомобили
-      .andWhere('car.deletedAt IS NULL'); // Только неудаленные автомобили
+      .andWhere('car.deletedAt IS NULL') // Только неудаленные автомобили
+      .andWhere('car.projectId = :projectId', { projectId: effectiveProjectId });
 
     // Применяем лимит
     if (params?.limit) {
@@ -102,22 +118,36 @@ export class CarService {
     return await queryBuilder.getMany();
   }
 
-  async getSoldCars(limit: number = 15) {
-    return await this.carRepo
+  async getSoldCars(limit: number = 15, projectId?: string) {
+    // Защита: если projectId не передан, используем office_1 по умолчанию
+    const effectiveProjectId = projectId && Object.values(ProjectType).includes(projectId as ProjectType)
+      ? projectId
+      : ProjectType.OFFICE_1;
+
+    const queryBuilder = this.carRepo
       .createQueryBuilder('car')
       .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
       .where('car.isSold = :isSold', { isSold: true })
       .andWhere('car.deletedAt IS NULL')
+      .andWhere('car.projectId = :projectId', { projectId: effectiveProjectId })
       .orderBy('car.createdAt', 'DESC')
-      .limit(limit)
-      .getMany();
+      .limit(limit);
+
+    return await queryBuilder.getMany();
   }
 
   async searchCars(carSearchDTO: CarSearchDTO) {
+    // Защита: если projectId не передан, используем office_1 по умолчанию
+    const effectiveProjectId = carSearchDTO.projectId && Object.values(ProjectType).includes(carSearchDTO.projectId as ProjectType)
+      ? carSearchDTO.projectId
+      : ProjectType.OFFICE_1;
+
     const qb = this.carRepo
       .createQueryBuilder('car')
       .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
-      .where('car.deletedAt IS NULL');
+      .where('car.deletedAt IS NULL')
+      .andWhere('car.isSold = :isSold', { isSold: false })
+      .andWhere('car.projectId = :projectId', { projectId: effectiveProjectId });
 
     if (carSearchDTO.brand)
       qb.andWhere('car.brand = :brand', { brand: carSearchDTO.brand });
@@ -271,12 +301,21 @@ export class CarService {
     return await this.carRepo.save(car);
   }
 
-  async getCar(id: number) {
-    return await this.carRepo.findOne({
-      where: { id },
-      relations: ['files'],
-      order: { files: { id: 'ASC' } },
-    });
+  async getCar(id: number, projectId?: string) {
+    // Защита: если projectId не передан, используем office_1 по умолчанию
+    const effectiveProjectId = projectId && Object.values(ProjectType).includes(projectId as ProjectType)
+      ? projectId
+      : ProjectType.OFFICE_1;
+
+    const queryBuilder = this.carRepo
+      .createQueryBuilder('car')
+      .leftJoinAndSelect('car.files', 'files', 'files.deletedAt IS NULL')
+      .where('car.id = :id', { id })
+      .andWhere('car.deletedAt IS NULL')
+      .andWhere('car.isSold = :isSold', { isSold: false })
+      .andWhere('car.projectId = :projectId', { projectId: effectiveProjectId });
+
+    return await queryBuilder.getOne();
   }
 
   async updateCar(carId: number, updateData: Partial<CarEntity>) {
@@ -309,7 +348,7 @@ export class CarService {
       this.fileRepo.create({
         filename: file.filename,
         mimetype: file.mimetype,
-        // Сохраняем только имя файла
+        // Сохраняем только имя файла без пути к папке
         // ServeStaticModule раздаёт файлы из /app/images по корню /
         path: file.filename,
         car: {
@@ -414,39 +453,14 @@ export class CarService {
       .getMany();
   }
 
-  generateYmlXml(cars: CarEntity[], siteId?: string): string {
-    // Маппинг сайтов
-    const SITE_CONFIG = {
-      adenatrans: {
-        name: 'Adena Trans',
-        companyName: 'Adena Trans Company',
-        url: 'https://adenatrans.ru',
-        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
-      },
-      autobroker: {
-        name: 'AutoBroker Yar',
-        companyName: 'AutoBroker Yar Company',
-        url: 'https://autobroker-yar.ru',
-        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
-      },
-      autocars: {
-        name: 'Auto C Cars',
-        companyName: 'Auto C Cars Company',
-        url: 'https://www.auto-c-cars.ru',
-        apiImageUrl: 'https://car-api-production.up.railway.app/cars',
-      },
-    };
-
-    // Получаем конфигурацию сайта (по умолчанию adenatrans)
-    const siteConfig = (siteId && SITE_CONFIG[siteId]) || SITE_CONFIG.adenatrans;
-
+  generateYmlXml(cars: CarEntity[]): string {
     const currentDate = new Date().toISOString();
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
     const ymlHeader = `<yml_catalog date="${currentDate}">
 <shop>
-<name>${this.escapeXml(siteConfig.name)}</name>
-<company>${this.escapeXml(siteConfig.companyName)}</company>
-<url>${siteConfig.url}/</url>
+<name>Adena Trans</name>
+<company>Adena Trans Company</company>
+<url>https://adenatrans.ru/</url>
 <currencies>
 <currency id="RUB" rate="1"/>
 </currencies>
@@ -470,11 +484,11 @@ export class CarService {
         const categoryId = this.getCategoryId(car);
         const carName = this.generateCarName(car);
         const description = this.generateDescription(car);
-        const imageUrl = this.getImageUrlForSite(car, siteConfig);
+        const imageUrl = this.getImageUrl(car);
 
         return `
 <offer id="${car.id}" available="true">
-<url>${siteConfig.url}/cars/${car.id}</url>
+<url>https://adenatrans.ru/car/${car.id}</url>
 <price>${car.price || 0}</price>
 <currencyId>RUB</currencyId>
 <categoryId>${categoryId}</categoryId>
@@ -591,31 +605,5 @@ export class CarService {
       }
     }
     return `https://adenatrans.ru/api/images/cars/${car.id}`;
-  }
-
-  private getImageUrlForSite(car: CarEntity, siteConfig: any): string {
-    if (car.files && car.files.length > 0) {
-      const firstFile = car.files.find((f) => !f.deletedAt) || car.files[0];
-      if (firstFile && firstFile.path) {
-        // Приоритет 1: Если path - это полный URL (http/https), используем напрямую
-        // Примеры: Flickr, Google Cloud Storage, Railway полные URL
-        if (firstFile.path.startsWith('http')) {
-          return firstFile.path;
-        }
-        
-        // Приоритет 2: Относительный путь - файлы в корне images/
-        // ServeStaticModule раздает файлы из /app/images по корню /
-        // Примеры: "images/1758373074193-975001566.jpg" или "1759305191068-703834019.jpg"
-        
-        // Убираем префикс "images/" если он есть
-        const cleanPath = firstFile.path.replace(/^images\//, '');
-        
-        // Строим URL через Railway API корень (БЕЗ /cars/)
-        return `https://car-api-production.up.railway.app/${cleanPath}`;
-      }
-    }
-    
-    // Fallback - если совсем нет файлов
-    return 'https://via.placeholder.com/800x600?text=No+Image';
   }
 }

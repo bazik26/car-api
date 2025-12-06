@@ -37,8 +37,8 @@ export class CarController {
 
   @Get('/brands-and-models-with-count')
   @Public()
-  getBrandsAndModelsWithCount(): any {
-    return this.carService.getBrandsAndModelsWithCount();
+  getBrandsAndModelsWithCount(@Query('projectId') projectId?: string): any {
+    return this.carService.getBrandsAndModelsWithCount(projectId);
   }
 
   @Get('/')
@@ -47,20 +47,25 @@ export class CarController {
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-    @Query('random') random?: string
+    @Query('random') random?: string,
+    @Query('projectId') projectId?: string
   ) {
     return await this.carService.getCars({
       limit,
       sortBy,
       sortOrder,
-      random: random === 'true'
+      random: random === 'true',
+      projectId
     });
   }
 
   @Get('/sold')
   @Public()
-  async getSoldCars(@Query('limit') limit?: number) {
-    return await this.carService.getSoldCars(limit || 15);
+  async getSoldCars(
+    @Query('limit') limit?: number,
+    @Query('projectId') projectId?: string
+  ) {
+    return await this.carService.getSoldCars(limit || 15, projectId);
   }
 
   @Post('/search')
@@ -86,8 +91,11 @@ export class CarController {
 
   @Get('/car/:carId')
   @Public()
-  async getCar(@Param('carId') carId: number) {
-    return await this.carService.getCar(carId);
+  async getCar(
+    @Param('carId') carId: number,
+    @Query('projectId') projectId?: string
+  ) {
+    return await this.carService.getCar(carId, projectId);
   }
 
   @Patch('/car/:carId')
