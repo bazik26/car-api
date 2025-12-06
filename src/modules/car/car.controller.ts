@@ -22,17 +22,41 @@ import { diskStorage } from 'multer';
 import { Public } from '../auth/public.decorator';
 
 import { CarService } from './car.service';
+import { PriceCheckService, PriceCheckResult } from './price-check.service';
 
 import { CarSearchDTO } from '../../dtos/car.dto';
+import { PriceCheckDTO } from '../../dtos/price-check.dto';
 
 @Controller('/cars')
 export class CarController {
-  constructor(protected readonly carService: CarService) {}
+  constructor(
+    protected readonly carService: CarService,
+    protected readonly priceCheckService: PriceCheckService,
+  ) {}
 
   @Get('/all-brands-and-models')
   @Public()
   getBrandsAndModels(): any {
     return this.carService.getAllBrandsAndModels();
+  }
+
+  /**
+   * Проверка цены автомобиля на российских площадках
+   * Ищет похожие автомобили на auto.ru, drom.ru, avito.ru
+   * и рассчитывает среднюю рыночную цену
+   */
+  @Post('/check-market-price')
+  async checkMarketPrice(@Body() priceCheckDTO: PriceCheckDTO): Promise<PriceCheckResult> {
+    return await this.priceCheckService.checkMarketPrice({
+      brand: priceCheckDTO.brand,
+      model: priceCheckDTO.model,
+      year: priceCheckDTO.year,
+      mileage: priceCheckDTO.mileage,
+      engine: priceCheckDTO.engine,
+      gearbox: priceCheckDTO.gearbox,
+      fuel: priceCheckDTO.fuel,
+      drive: priceCheckDTO.drive,
+    });
   }
 
   @Get('/brands-and-models-with-count')
