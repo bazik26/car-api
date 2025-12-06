@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CarEntity } from '../../db/car.entity';
+import { BRANDS_AND_MODELS } from './brands';
 
 export interface PriceCheckParams {
   brand: string;
@@ -40,39 +41,12 @@ export interface PriceCheckResult {
   debug?: string[];
 }
 
-interface DromFirm {
-  id: number;
-  name: string;
-  alias: string;
-}
-
-interface DromModel {
-  id: number;
-  name: string;
-  alias: string;
-}
-
-interface DromBull {
-  id: number;
-  title: string;
-  price: number;
-  year: number;
-  mileageKm: number;
-  engineVolume?: number;
-  url: string;
-  photos?: { url: string }[];
-}
-
 @Injectable()
 export class PriceCheckService {
   private readonly logger = new Logger(PriceCheckService.name);
-  
-  // Кэш для firmId и modelId
-  private firmsCache: DromFirm[] | null = null;
-  private modelsCache: Map<number, DromModel[]> = new Map();
 
-  // Базовый URL Drom API
-  private readonly DROM_API_URL = 'https://api.drom.ru/v1.2';
+  // Используем BRANDS_AND_MODELS для валидации
+  private readonly brandsAndModels = BRANDS_AND_MODELS;
 
   constructor(
     @InjectRepository(CarEntity)
@@ -89,24 +63,38 @@ export class PriceCheckService {
     const sources: string[] = [];
     const debugInfo: string[] = [];
 
-    // Запрашиваем данные с Drom.ru API и локальной БД
-    const [dromResult, localResult] = await Promise.allSettled([
-      this.searchDromApi(params),
+    // Параллельно запрашиваем данные с разных площадок
+    const [dromResult, autoruResult, localResult] = await Promise.allSettled([
+      this.searchDrom(params),
+      this.searchAutoRu(params),
       this.searchLocalDatabase(params),
     ]);
 
-    // Обрабатываем результаты Drom.ru API
+    // Обрабатываем результаты Drom
     if (dromResult.status === 'fulfilled') {
       if (dromResult.value.length > 0) {
         listings.push(...dromResult.value);
         sources.push('drom.ru');
-        debugInfo.push(`Drom.ru API: найдено ${dromResult.value.length}`);
+        debugInfo.push(`Drom.ru: найдено ${dromResult.value.length}`);
       } else {
-        debugInfo.push('Drom.ru API: 0 результатов');
+        debugInfo.push('Drom.ru: 0 результатов');
       }
     } else {
-      debugInfo.push(`Drom.ru API ошибка: ${dromResult.reason?.message || dromResult.reason}`);
-      this.logger.warn(`Drom API error: ${dromResult.reason}`);
+      debugInfo.push(`Drom.ru ошибка: ${dromResult.reason?.message || dromResult.reason}`);
+      this.logger.warn(`Drom error: ${dromResult.reason}`);
+    }
+
+    // Обрабатываем результаты Auto.ru
+    if (autoruResult.status === 'fulfilled') {
+      if (autoruResult.value.length > 0) {
+        listings.push(...autoruResult.value);
+        sources.push('auto.ru');
+        debugInfo.push(`Auto.ru: найдено ${autoruResult.value.length}`);
+      } else {
+        debugInfo.push('Auto.ru: 0 результатов');
+      }
+    } else {
+      debugInfo.push(`Auto.ru ошибка: ${autoruResult.reason?.message || autoruResult.reason}`);
     }
 
     // Добавляем данные из локальной БД
@@ -173,268 +161,255 @@ export class PriceCheckService {
   }
 
   /**
-   * Получить список всех марок (firms) с Drom API
+   * Нормализация названия модели для URL Drom
+   * Примеры: "3 Series" -> "3-series", "Land Cruiser Prado" -> "land_cruiser_prado"
    */
-  private async getDromFirms(): Promise<DromFirm[]> {
-    if (this.firmsCache) {
-      return this.firmsCache;
+  private normalizeModelForUrl(brand: string, model: string): string {
+    // Специальные правила для немецких марок
+    let normalized = model.toLowerCase();
+    
+    // BMW: "3 Series" -> "3-series"
+    if (brand === 'BMW') {
+      normalized = normalized
+        .replace(/\s+series$/i, '-series')
+        .replace(/\s+gran\s+turismo$/i, '-gran_turismo')
+        .replace(/\s+gran\s+coup[eé]$/i, '-gran_coupe')
+        .replace(/\s+active\s+tourer$/i, '-active_tourer');
     }
-
-    try {
-      const response = await fetch(`${this.DROM_API_URL}/auto/catalog/firms`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; CarPriceChecker/1.0)',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const firms: DromFirm[] = data.firms || data.data || data || [];
-      this.firmsCache = firms;
-      this.logger.log(`Loaded ${firms.length} firms from Drom API`);
-      return firms;
-    } catch (error) {
-      this.logger.warn(`Failed to load Drom firms: ${error.message}`);
-      return [];
+    
+    // Mercedes: "A-Class" -> "a-class", "GLA" -> "gla"
+    if (brand === 'Mercedes-Benz') {
+      normalized = normalized
+        .replace(/\s+sedan$/i, '')
+        .replace(/\s+estate$/i, '_estate')
+        .replace(/\s+all-terrain$/i, '_all-terrain')
+        .replace(/\s+coup[eé]$/i, '_coupe')
+        .replace(/\s+cabriolet$/i, '_cabriolet');
     }
+    
+    // Общие преобразования
+    normalized = normalized
+      .replace(/\s+/g, '_')      // Пробелы -> подчеркивания
+      .replace(/[éè]/g, 'e')     // Французские буквы
+      .replace(/[^\w-]/g, '');   // Убираем спецсимволы
+    
+    return normalized;
   }
 
   /**
-   * Получить список моделей для марки
+   * Нормализация названия бренда для URL Drom
    */
-  private async getDromModels(firmId: number): Promise<DromModel[]> {
-    if (this.modelsCache.has(firmId)) {
-      return this.modelsCache.get(firmId)!;
-    }
-
-    try {
-      const response = await fetch(`${this.DROM_API_URL}/auto/catalog/firms/${firmId}/models`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; CarPriceChecker/1.0)',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const models = data.models || data.data || data || [];
-      this.modelsCache.set(firmId, models);
-      return models;
-    } catch (error) {
-      this.logger.warn(`Failed to load Drom models for firm ${firmId}: ${error.message}`);
-      return [];
-    }
+  private normalizeBrandForUrl(brand: string): string {
+    const brandMapping: Record<string, string> = {
+      'Mercedes-Benz': 'mercedes',
+      'Land Rover': 'land_rover',
+      'Alfa Romeo': 'alfa_romeo',
+      'Great Wall': 'great_wall',
+    };
+    
+    return brandMapping[brand] || brand.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
   }
 
   /**
-   * Найти firmId по названию марки
+   * Поиск на Drom.ru через парсинг HTML
    */
-  private async findFirmId(brand: string): Promise<number | null> {
-    const firms = await this.getDromFirms();
+  private async searchDrom(params: PriceCheckParams): Promise<MarketCarListing[]> {
+    const brand = this.normalizeBrandForUrl(params.brand);
+    const model = this.normalizeModelForUrl(params.brand, params.model);
     
-    const brandLower = brand.toLowerCase().trim();
-    const brandNormalized = this.normalizeBrandName(brand);
+    const yearFrom = params.year - 1;
+    const yearTo = params.year + 1;
+
+    // URL формат: https://auto.drom.ru/bmw/3-series/?minYear=2019&maxYear=2021
+    const url = `https://auto.drom.ru/${brand}/${model}/?minYear=${yearFrom}&maxYear=${yearTo}`;
     
-    // Точное совпадение
-    let firm = firms.find(f => 
-      f.name?.toLowerCase() === brandLower ||
-      f.alias?.toLowerCase() === brandLower
-    );
-    
-    // Частичное совпадение
-    if (!firm) {
-      firm = firms.find(f => 
-        f.name?.toLowerCase().includes(brandLower) ||
-        f.alias?.toLowerCase().includes(brandLower) ||
-        brandLower.includes(f.name?.toLowerCase() || '') ||
-        brandLower.includes(f.alias?.toLowerCase() || '')
-      );
-    }
-
-    // Поиск по нормализованному названию
-    if (!firm) {
-      firm = firms.find(f => 
-        f.alias?.toLowerCase() === brandNormalized ||
-        f.name?.toLowerCase() === brandNormalized
-      );
-    }
-    
-    return firm?.id || null;
-  }
-
-  /**
-   * Найти modelId по названию модели
-   */
-  private async findModelId(firmId: number, model: string): Promise<number | null> {
-    const models = await this.getDromModels(firmId);
-    
-    const modelLower = model.toLowerCase().trim();
-    const modelNormalized = this.normalizeModelName(model);
-    
-    // Точное совпадение
-    let foundModel = models.find(m => 
-      m.name?.toLowerCase() === modelLower ||
-      m.alias?.toLowerCase() === modelLower
-    );
-    
-    // Поиск по нормализованному названию (3 Series -> 3-series)
-    if (!foundModel) {
-      foundModel = models.find(m => 
-        m.alias?.toLowerCase() === modelNormalized ||
-        m.name?.toLowerCase() === modelNormalized
-      );
-    }
-
-    // Частичное совпадение
-    if (!foundModel) {
-      foundModel = models.find(m => {
-        const mName = m.name?.toLowerCase() || '';
-        const mAlias = m.alias?.toLowerCase() || '';
-        return mName.includes(modelLower) || 
-               mAlias.includes(modelLower) ||
-               modelLower.includes(mName) ||
-               modelLower.includes(mAlias);
-      });
-    }
-
-    // Поиск только по цифрам/буквам (для "3 Series" найти "3-series" или "3er")
-    if (!foundModel) {
-      const modelDigits = modelLower.replace(/[^\d]/g, '');
-      if (modelDigits) {
-        foundModel = models.find(m => {
-          const aliasDigits = (m.alias || '').replace(/[^\d]/g, '');
-          return aliasDigits === modelDigits;
-        });
-      }
-    }
-    
-    return foundModel?.id || null;
-  }
-
-  /**
-   * Нормализация названия марки для URL
-   */
-  private normalizeBrandName(brand: string): string {
-    return brand
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/_/g, '-')
-      .replace(/mercedes-benz/i, 'mercedes')
-      .replace(/land\s*rover/i, 'land-rover')
-      .replace(/alfa\s*romeo/i, 'alfa-romeo');
-  }
-
-  /**
-   * Нормализация названия модели для URL
-   */
-  private normalizeModelName(model: string): string {
-    return model
-      .toLowerCase()
-      .replace(/\s+series$/i, '-series')  // "3 Series" -> "3-series"
-      .replace(/\s+class$/i, '-class')    // "C Class" -> "c-class"
-      .replace(/\s+/g, '-')
-      .replace(/_/g, '-');
-  }
-
-  /**
-   * Поиск на Drom.ru через API
-   */
-  private async searchDromApi(params: PriceCheckParams): Promise<MarketCarListing[]> {
-    // Находим firmId и modelId
-    const firmId = await this.findFirmId(params.brand);
-    if (!firmId) {
-      this.logger.warn(`Firm not found for brand: ${params.brand}`);
-      throw new Error(`Марка "${params.brand}" не найдена в справочнике Drom`);
-    }
-    
-    this.logger.log(`Found firmId: ${firmId} for brand: ${params.brand}`);
-
-    const modelId = await this.findModelId(firmId, params.model);
-    if (!modelId) {
-      this.logger.warn(`Model not found for: ${params.model}`);
-      throw new Error(`Модель "${params.model}" не найдена в справочнике Drom`);
-    }
-    
-    this.logger.log(`Found modelId: ${modelId} for model: ${params.model}`);
-
-    // Формируем параметры запроса
-    const searchParams = new URLSearchParams();
-    searchParams.append('firmId', firmId.toString());
-    searchParams.append('modelId', modelId.toString());
-    
-    // Год ±1
-    if (params.year) {
-      searchParams.append('minYear', (params.year - 1).toString());
-      searchParams.append('maxYear', (params.year + 1).toString());
-    }
-
-    // Пробег ±30000
-    if (params.mileage) {
-      searchParams.append('minMileageKm', Math.max(0, params.mileage - 30000).toString());
-      searchParams.append('maxMileageKm', (params.mileage + 30000).toString());
-    }
-
-    // Объем двигателя ±0.3
-    if (params.engine) {
-      searchParams.append('minEngineVolume', (params.engine - 0.3).toFixed(1));
-      searchParams.append('maxEngineVolume', (params.engine + 0.3).toFixed(1));
-    }
-
-    // Только непроданные
-    searchParams.append('unsold', 'true');
-    // С фотографией
-    searchParams.append('withPhoto', 'true');
-
-    const url = `${this.DROM_API_URL}/bulls/search?${searchParams.toString()}`;
-    this.logger.log(`Drom API URL: ${url}`);
+    this.logger.log(`Drom URL: ${url}`);
 
     try {
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; CarPriceChecker/1.0)',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
         },
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        this.logger.warn(`Drom API response: ${response.status} - ${text.substring(0, 200)}`);
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await response.json();
+      const html = await response.text();
       
-      // Парсим результаты
-      const bulls: DromBull[] = data.bulls || data.data || data.items || data || [];
-      
-      if (!Array.isArray(bulls)) {
-        this.logger.warn(`Unexpected Drom API response format: ${JSON.stringify(data).substring(0, 200)}`);
+      // Проверяем, что это не страница 404
+      if (html.includes('Запрошенная Вами страница не существует')) {
+        this.logger.warn(`Drom: Page not found for ${brand}/${model}`);
         return [];
       }
 
-      this.logger.log(`Drom API returned ${bulls.length} bulls`);
+      const listings: MarketCarListing[] = [];
 
-      return bulls.map(bull => ({
-        title: bull.title || `${params.brand} ${params.model}`,
-        price: bull.price || 0,
-        year: bull.year || params.year,
-        mileage: bull.mileageKm || 0,
-        engine: bull.engineVolume,
-        link: bull.url || `https://auto.drom.ru/bull/${bull.id}`,
-        source: 'drom.ru',
-        imageUrl: bull.photos?.[0]?.url,
-      })).filter(l => l.price > 0);
+      // Парсим JSON данные из HTML
+      // Ищем паттерн "price":XXXXXX
+      const priceMatches = html.matchAll(/"price":(\d+)/g);
+      const prices: number[] = [];
+      
+      for (const match of priceMatches) {
+        const price = parseInt(match[1], 10);
+        // Фильтруем нереальные цены
+        if (price >= 100000 && price <= 50000000) {
+          prices.push(price);
+        }
+      }
+
+      // Парсим годы
+      const yearMatches = html.matchAll(/"year":(\d{4})/g);
+      const years: number[] = [];
+      for (const match of yearMatches) {
+        years.push(parseInt(match[1], 10));
+      }
+
+      // Парсим пробеги
+      const mileageMatches = html.matchAll(/"mileage":(\d+)/g);
+      const mileages: number[] = [];
+      for (const match of mileageMatches) {
+        mileages.push(parseInt(match[1], 10));
+      }
+
+      // Парсим ссылки на объявления
+      const linkMatches = html.matchAll(/href="(https:\/\/auto\.drom\.ru\/[^"]+\/(\d+)\.html)"/g);
+      const links: string[] = [];
+      for (const match of linkMatches) {
+        if (!links.includes(match[1])) {
+          links.push(match[1]);
+        }
+      }
+
+      // Убираем дубликаты цен и создаем листинги
+      const uniquePrices = [...new Set(prices)];
+      
+      for (let i = 0; i < uniquePrices.length && listings.length < 30; i++) {
+        listings.push({
+          title: `${params.brand} ${params.model}`,
+          price: uniquePrices[i],
+          year: years[i] || params.year,
+          mileage: mileages[i] || 0,
+          link: links[i] || url,
+          source: 'drom.ru',
+        });
+      }
+
+      this.logger.log(`Drom: found ${listings.length} listings`);
+      return listings;
     } catch (error) {
-      this.logger.warn(`Drom API search failed: ${error.message}`);
+      this.logger.warn(`Drom error: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Поиск на Auto.ru через парсинг HTML
+   */
+  private async searchAutoRu(params: PriceCheckParams): Promise<MarketCarListing[]> {
+    const brand = this.normalizeBrandForUrl(params.brand);
+    // Auto.ru использует другой формат моделей (3er вместо 3-series для BMW)
+    const model = this.getAutoruModelUrl(params.brand, params.model);
+    
+    const yearFrom = params.year - 1;
+    const yearTo = params.year + 1;
+
+    // URL формат: https://auto.ru/moskva/cars/bmw/3er/used/?year_from=2019&year_to=2021
+    const url = `https://auto.ru/rossiya/cars/${brand}/${model}/used/?year_from=${yearFrom}&year_to=${yearTo}`;
+    
+    this.logger.log(`Auto.ru URL: ${url}`);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const listings: MarketCarListing[] = [];
+
+      // Парсим JSON данные из HTML
+      const priceMatches = html.matchAll(/"price":(\d+)/g);
+      const prices: number[] = [];
+      
+      for (const match of priceMatches) {
+        const price = parseInt(match[1], 10);
+        if (price >= 100000 && price <= 50000000) {
+          prices.push(price);
+        }
+      }
+
+      // Убираем дубликаты
+      const uniquePrices = [...new Set(prices)];
+      
+      for (let i = 0; i < uniquePrices.length && listings.length < 30; i++) {
+        listings.push({
+          title: `${params.brand} ${params.model}`,
+          price: uniquePrices[i],
+          year: params.year,
+          mileage: 0,
+          link: url,
+          source: 'auto.ru',
+        });
+      }
+
+      this.logger.log(`Auto.ru: found ${listings.length} listings`);
+      return listings;
+    } catch (error) {
+      this.logger.warn(`Auto.ru error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Получить URL модели для Auto.ru
+   * Auto.ru использует другой формат: "3er" вместо "3-series", "c_klasse" вместо "c-class"
+   */
+  private getAutoruModelUrl(brand: string, model: string): string {
+    let normalized = model.toLowerCase();
+    
+    // BMW: "3 Series" -> "3er"
+    if (brand === 'BMW') {
+      const seriesMatch = normalized.match(/^(\d)\s*series/i);
+      if (seriesMatch) {
+        return seriesMatch[1] + 'er';
+      }
+    }
+    
+    // Mercedes: "C-Class" -> "c_klasse"
+    if (brand === 'Mercedes-Benz') {
+      const classMatch = normalized.match(/^([a-z]+)-?class/i);
+      if (classMatch) {
+        return classMatch[1].toLowerCase() + '_klasse';
+      }
+    }
+    
+    // Общая нормализация
+    return normalized
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_')
+      .replace(/[éè]/g, 'e');
+  }
+
+  /**
+   * Проверить, существует ли марка/модель в справочнике
+   */
+  private validateBrandAndModel(brand: string, model: string): boolean {
+    const brandData = this.brandsAndModels.find(b => b.title === brand);
+    if (!brandData) return false;
+    
+    return brandData.models.some(m => m.title === model);
   }
 
   /**
