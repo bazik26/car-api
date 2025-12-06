@@ -221,7 +221,13 @@ export class PriceCheckService {
     const yearTo = params.year + 1;
 
     // URL формат: https://auto.drom.ru/bmw/3-series/?minYear=2019&maxYear=2021
-    const url = `https://auto.drom.ru/${brand}/${model}/?minYear=${yearFrom}&maxYear=${yearTo}`;
+    let url = `https://auto.drom.ru/${brand}/${model}/?minYear=${yearFrom}&maxYear=${yearTo}`;
+    
+    // Добавляем фильтр по пробегу если указан
+    if (params.mileage) {
+      const maxRun = params.mileage + 50000;
+      url += `&maxRun=${maxRun}`;
+    }
     
     this.logger.log(`Drom URL: ${url}`);
 
@@ -250,30 +256,34 @@ export class PriceCheckService {
       const listings: MarketCarListing[] = [];
 
       // Парсим JSON данные из HTML
-      // Ищем паттерн "price":XXXXXX
+      // Цены: "price":XXXXXX
       const priceMatches = html.matchAll(/"price":(\d+)/g);
       const prices: number[] = [];
-      
       for (const match of priceMatches) {
         const price = parseInt(match[1], 10);
-        // Фильтруем нереальные цены
         if (price >= 100000 && price <= 50000000) {
           prices.push(price);
         }
       }
 
-      // Парсим годы
-      const yearMatches = html.matchAll(/"year":(\d{4})/g);
+      // Годы: "year":"2021" или "year":2021
+      const yearMatches = html.matchAll(/"year":"?(\d{4})"?/g);
       const years: number[] = [];
       for (const match of yearMatches) {
-        years.push(parseInt(match[1], 10));
+        const year = parseInt(match[1], 10);
+        if (year >= 1990 && year <= 2030) {
+          years.push(year);
+        }
       }
 
-      // Парсим пробеги
-      const mileageMatches = html.matchAll(/"mileage":(\d+)/g);
+      // Пробеги: "mileage":XXXXX или "run":XXXXX или в тексте "XXX XXX км"
+      const mileageMatches = html.matchAll(/"(?:mileage|run|mileageKm)":(\d+)/g);
       const mileages: number[] = [];
       for (const match of mileageMatches) {
-        mileages.push(parseInt(match[1], 10));
+        const mileage = parseInt(match[1], 10);
+        if (mileage > 0 && mileage < 1000000) {
+          mileages.push(mileage);
+        }
       }
 
       // Парсим ссылки на объявления
@@ -285,7 +295,9 @@ export class PriceCheckService {
         }
       }
 
-      // Убираем дубликаты цен и создаем листинги
+      this.logger.log(`Drom parsed: ${prices.length} prices, ${years.length} years, ${mileages.length} mileages, ${links.length} links`);
+
+      // Создаем листинги, связывая данные по индексу
       const uniquePrices = [...new Set(prices)];
       
       for (let i = 0; i < uniquePrices.length && listings.length < 30; i++) {
@@ -340,15 +352,37 @@ export class PriceCheckService {
       const listings: MarketCarListing[] = [];
 
       // Парсим JSON данные из HTML
+      // Цены
       const priceMatches = html.matchAll(/"price":(\d+)/g);
       const prices: number[] = [];
-      
       for (const match of priceMatches) {
         const price = parseInt(match[1], 10);
         if (price >= 100000 && price <= 50000000) {
           prices.push(price);
         }
       }
+
+      // Годы: "year":2021
+      const yearMatches = html.matchAll(/"year":(\d{4})/g);
+      const years: number[] = [];
+      for (const match of yearMatches) {
+        const year = parseInt(match[1], 10);
+        if (year >= 1990 && year <= 2030) {
+          years.push(year);
+        }
+      }
+
+      // Пробеги: "mileage":XXXXX
+      const mileageMatches = html.matchAll(/"mileage":(\d+)/g);
+      const mileages: number[] = [];
+      for (const match of mileageMatches) {
+        const mileage = parseInt(match[1], 10);
+        if (mileage > 0 && mileage < 1000000) {
+          mileages.push(mileage);
+        }
+      }
+
+      this.logger.log(`Auto.ru parsed: ${prices.length} prices, ${years.length} years, ${mileages.length} mileages`);
 
       // Убираем дубликаты
       const uniquePrices = [...new Set(prices)];
@@ -357,8 +391,8 @@ export class PriceCheckService {
         listings.push({
           title: `${params.brand} ${params.model}`,
           price: uniquePrices[i],
-          year: params.year,
-          mileage: 0,
+          year: years[i] || params.year,
+          mileage: mileages[i] || 0,
           link: url,
           source: 'auto.ru',
         });
