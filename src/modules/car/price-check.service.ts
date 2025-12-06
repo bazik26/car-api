@@ -56,7 +56,20 @@ export class PriceCheckService {
 
   // Rate limiting: последний запрос к каждой площадке
   private lastRequestTime: Record<string, number> = {};
-  private readonly MIN_REQUEST_INTERVAL = 2000; // Минимум 2 секунды между запросами к одной площадке
+  private readonly MIN_REQUEST_INTERVAL = 3000; // Минимум 3 секунды между запросами к одной площадке
+
+  // Счётчик ошибок 429 для включения задержки
+  private error429Count: Record<string, number> = {};
+  private readonly MAX_429_ERRORS = 3; // После 3 ошибок увеличиваем задержку
+  
+  // Список прокси-серверов (можно добавить свои)
+  // Формат: http://user:pass@host:port или http://host:port
+  private readonly proxyList: string[] = [
+    // Добавьте сюда свои прокси:
+    // 'http://user:pass@proxy1.example.com:8080',
+    // 'http://proxy2.example.com:3128',
+  ];
+  private currentProxyIndex = 0;
 
   // Ротация User-Agent
   private readonly userAgents = [
@@ -81,19 +94,57 @@ export class PriceCheckService {
   }
 
   /**
-   * Ожидание перед запросом (rate limiting)
+   * Получить следующий прокси из списка
+   */
+  private getNextProxy(): string | null {
+    if (this.proxyList.length === 0) return null;
+    
+    const proxy = this.proxyList[this.currentProxyIndex];
+    this.currentProxyIndex = (this.currentProxyIndex + 1) % this.proxyList.length;
+    return proxy;
+  }
+
+  /**
+   * Обработать ошибку 429
+   */
+  private handle429Error(source: string): void {
+    this.error429Count[source] = (this.error429Count[source] || 0) + 1;
+    this.logger.warn(`429 error count for ${source}: ${this.error429Count[source]}`);
+  }
+
+  /**
+   * Ожидание перед запросом (rate limiting с учётом ошибок 429)
    */
   private async waitForRateLimit(source: string): Promise<void> {
     const lastTime = this.lastRequestTime[source] || 0;
     const elapsed = Date.now() - lastTime;
+    const errorCount = this.error429Count[source] || 0;
     
-    if (elapsed < this.MIN_REQUEST_INTERVAL) {
-      const waitTime = this.MIN_REQUEST_INTERVAL - elapsed + Math.random() * 1000; // + случайная задержка
+    // Увеличиваем интервал если были ошибки 429
+    let interval = this.MIN_REQUEST_INTERVAL;
+    if (errorCount > 0) {
+      // Экспоненциальная задержка: 3с -> 6с -> 12с -> 24с -> ...
+      interval = this.MIN_REQUEST_INTERVAL * Math.pow(2, Math.min(errorCount, 5));
+      this.logger.warn(`Increased delay for ${source} due to 429 errors: ${interval}ms`);
+    }
+    
+    if (elapsed < interval) {
+      const waitTime = interval - elapsed + Math.random() * 2000; // + случайная задержка до 2 сек
       this.logger.log(`Rate limit: waiting ${Math.round(waitTime)}ms before ${source} request`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
     this.lastRequestTime[source] = Date.now();
+  }
+
+  /**
+   * Сбросить счётчик ошибок после успешного запроса
+   */
+  private resetErrorCount(source: string): void {
+    if (this.error429Count[source] > 0) {
+      this.error429Count[source] = 0;
+      this.logger.log(`Reset 429 error count for ${source}`);
+    }
   }
 
   /**
@@ -343,14 +394,30 @@ export class PriceCheckService {
           'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
+          'Connection': 'keep-alive',
         },
       });
+
+      // Обработка ошибки 429
+      if (response.status === 429) {
+        this.handle429Error('drom');
+        throw new Error('HTTP 429 - Слишком много запросов. Попробуйте позже.');
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
+      // Успешный запрос - сбрасываем счётчик ошибок
+      this.resetErrorCount('drom');
+
       const html = await response.text();
+      
+      // Проверяем на страницу блокировки
+      if (html.includes('Too Many Requests') || html.includes('429')) {
+        this.handle429Error('drom');
+        throw new Error('Drom заблокировал запросы. Попробуйте позже.');
+      }
       
       // Проверяем, что это не страница 404
       if (html.includes('Запрошенная Вами страница не существует')) {
@@ -452,12 +519,22 @@ export class PriceCheckService {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Referer': 'https://auto.ru/',
+          'Connection': 'keep-alive',
         },
       });
+
+      // Обработка ошибки 429
+      if (response.status === 429) {
+        this.handle429Error('autoru');
+        throw new Error('HTTP 429 - Слишком много запросов. Попробуйте позже.');
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
+
+      // Успешный запрос - сбрасываем счётчик ошибок
+      this.resetErrorCount('autoru');
 
       const html = await response.text();
       const listings: MarketCarListing[] = [];
