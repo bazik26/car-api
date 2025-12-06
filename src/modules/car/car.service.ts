@@ -453,14 +453,15 @@ export class CarService {
       .getMany();
   }
 
-  generateYmlXml(cars: CarEntity[]): string {
+  generateYmlXml(cars: CarEntity[], site?: string): string {
     const currentDate = new Date().toISOString();
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
+    const siteUrl = site || 'https://adenatrans.ru';
     const ymlHeader = `<yml_catalog date="${currentDate}">
 <shop>
 <name>Adena Trans</name>
 <company>Adena Trans Company</company>
-<url>https://adenatrans.ru/</url>
+<url>${siteUrl}/</url>
 <currencies>
 <currency id="RUB" rate="1"/>
 </currencies>
@@ -488,7 +489,7 @@ export class CarService {
 
         return `
 <offer id="${car.id}" available="true">
-<url>https://adenatrans.ru/car/${car.id}</url>
+<url>${siteUrl}/car/${car.id}</url>
 <price>${car.price || 0}</price>
 <currencyId>RUB</currencyId>
 <categoryId>${categoryId}</categoryId>
