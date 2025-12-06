@@ -48,16 +48,109 @@ export class PriceCheckService {
   // Используем BRANDS_AND_MODELS для валидации
   private readonly brandsAndModels = BRANDS_AND_MODELS;
 
+  // === Защита от блокировки ===
+  
+  // Кэш результатов (ключ: brand_model_year, значение: результат + timestamp)
+  private readonly cache = new Map<string, { result: PriceCheckResult; timestamp: number }>();
+  private readonly CACHE_TTL = 60 * 60 * 1000; // 1 час в миллисекундах
+
+  // Rate limiting: последний запрос к каждой площадке
+  private lastRequestTime: Record<string, number> = {};
+  private readonly MIN_REQUEST_INTERVAL = 2000; // Минимум 2 секунды между запросами к одной площадке
+
+  // Ротация User-Agent
+  private readonly userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+  ];
+
   constructor(
     @InjectRepository(CarEntity)
     private readonly carRepo: Repository<CarEntity>,
   ) {}
 
   /**
+   * Получить случайный User-Agent
+   */
+  private getRandomUserAgent(): string {
+    return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
+  }
+
+  /**
+   * Ожидание перед запросом (rate limiting)
+   */
+  private async waitForRateLimit(source: string): Promise<void> {
+    const lastTime = this.lastRequestTime[source] || 0;
+    const elapsed = Date.now() - lastTime;
+    
+    if (elapsed < this.MIN_REQUEST_INTERVAL) {
+      const waitTime = this.MIN_REQUEST_INTERVAL - elapsed + Math.random() * 1000; // + случайная задержка
+      this.logger.log(`Rate limit: waiting ${Math.round(waitTime)}ms before ${source} request`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    this.lastRequestTime[source] = Date.now();
+  }
+
+  /**
+   * Получить ключ для кэша
+   */
+  private getCacheKey(params: PriceCheckParams): string {
+    return `${params.brand}_${params.model}_${params.year}_${params.mileage || 0}`;
+  }
+
+  /**
+   * Проверить кэш
+   */
+  private getFromCache(params: PriceCheckParams): PriceCheckResult | null {
+    const key = this.getCacheKey(params);
+    const cached = this.cache.get(key);
+    
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+      this.logger.log(`Cache hit for ${key}`);
+      return cached.result;
+    }
+    
+    // Удаляем устаревший кэш
+    if (cached) {
+      this.cache.delete(key);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Сохранить в кэш
+   */
+  private saveToCache(params: PriceCheckParams, result: PriceCheckResult): void {
+    const key = this.getCacheKey(params);
+    this.cache.set(key, { result, timestamp: Date.now() });
+    this.logger.log(`Cached result for ${key}`);
+    
+    // Очистка старых записей (держим максимум 100 записей)
+    if (this.cache.size > 100) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+  }
+
+  /**
    * Основной метод проверки цены на российских площадках
    */
   async checkMarketPrice(params: PriceCheckParams): Promise<PriceCheckResult> {
     this.logger.log(`Checking market price for ${params.brand} ${params.model} ${params.year}`);
+
+    // Проверяем кэш
+    const cached = this.getFromCache(params);
+    if (cached) {
+      return { ...cached, debug: [...(cached.debug || []), 'Результат из кэша'] };
+    }
 
     const listings: MarketCarListing[] = [];
     const sources: string[] = [];
@@ -113,7 +206,7 @@ export class PriceCheckService {
     // Если не нашли ничего, возвращаем оценочную цену
     if (listings.length === 0) {
       const estimatedPrice = this.estimatePrice(params);
-      return {
+      const result: PriceCheckResult = {
         success: false,
         averagePrice: estimatedPrice,
         minPrice: Math.floor(estimatedPrice * 0.8),
@@ -127,6 +220,8 @@ export class PriceCheckService {
         error: 'Не найдено объявлений на площадках. Показана оценочная цена.',
         debug: debugInfo,
       };
+      // Не кэшируем пустые результаты - возможно временная блокировка
+      return result;
     }
 
     // Рассчитываем статистику по ценам
@@ -145,7 +240,7 @@ export class PriceCheckService {
     // Сортируем листинги по цене
     const sortedListings = listings.sort((a, b) => a.price - b.price);
 
-    return {
+    const result: PriceCheckResult = {
       success: true,
       averagePrice,
       minPrice,
@@ -158,6 +253,11 @@ export class PriceCheckService {
       searchParams: params,
       debug: debugInfo,
     };
+
+    // Сохраняем успешный результат в кэш
+    this.saveToCache(params, result);
+
+    return result;
   }
 
   /**
@@ -232,12 +332,17 @@ export class PriceCheckService {
     this.logger.log(`Drom URL: ${url}`);
 
     try {
+      // Rate limiting
+      await this.waitForRateLimit('drom');
+
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': this.getRandomUserAgent(),
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
           'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
       });
 
@@ -336,11 +441,17 @@ export class PriceCheckService {
     this.logger.log(`Auto.ru URL: ${url}`);
 
     try {
+      // Rate limiting
+      await this.waitForRateLimit('autoru');
+
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': this.getRandomUserAgent(),
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Referer': 'https://auto.ru/',
         },
       });
 
